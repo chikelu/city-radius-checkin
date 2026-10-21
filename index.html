@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-fA7Ln0WRVY8xnGknPvk2JKwZFCHWE884tSTWa1Qi+8c=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-IZEdV8sjaVghWBLXPbH6lR1uuVQTgWXBIgU/Erjn3Jc=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -210,6 +210,7 @@ p{margin:0}
 .panel h2{font-size:21px;font-weight:800;display:flex;align-items:center;gap:10px}
 .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:14px;font-weight:700;white-space:nowrap}
 .pill-off{background:var(--sunk);color:var(--muted)}
+.pw-row{display:flex;gap:8px;align-items:stretch}.pw-row input{flex:1;min-width:0}.pw-show{min-width:76px;min-height:56px}
 .sb-pin{font-size:22px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
 @media print{body *{visibility:hidden}.sb-pins,.sb-pins *{visibility:visible}.sb-pins{position:absolute;left:0;top:0;width:100%;border:0}.sb-pins .no-print{display:none}.sb-pins .scroll{overflow:visible}.sb-pin-tbl tr{page-break-inside:avoid}}
 .ph-cam{display:flex;flex-direction:column;align-items:center;gap:8px}
@@ -2817,7 +2818,7 @@ en:{
   sbStaff:'Coordinator or HR', sbStaffSub:'Sign in with your username and password.',
   sbPinTitle:'Hi {first}. Type your PIN', sbPinSub:'Your 6-number PIN from HR.', sbPinDots:'{n} of 6 numbers typed', sbPad:'PIN pad',
   sbClear:'Clear', sbBackKey:'Back', sbBackKeyLabel:'Delete last number', sbNotMe:'Not you? Choose another name', sbBack:'Back',
-  sbUser:'Username', sbPass:'Password', sbSignIn:'Sign in', sbSigningIn:'Signing in…', sbLoadingNames:'Loading names…', sbRetry:'Try again',
+  sbUser:'Username', sbPass:'Password', sbPwShow:'Show', sbPwHide:'Hide', sbSignIn:'Sign in', sbSigningIn:'Signing in…', sbLoadingNames:'Loading names…', sbRetry:'Try again',
   sbWrongPin:'That PIN did not work. Check it and try again.', sbWrongPass:'That username and password do not match. Try again.',
   sbTriesLeft:'{n} more tries before this device locks for 5 minutes.', sbTriesLeft1:'1 more try before this device locks for 5 minutes.',
   sbLockedT:'Locked for a few minutes', sbLocked:'Too many tries. Try again in {min} min. If you forgot your PIN, ask HR for a new one.',
@@ -6221,7 +6222,7 @@ const SBA = {
       <div class="hello"><h1 id="sb-h" tabindex="-1">${esc(t('sbStaff'))}</h1><p>${esc(t('sbStaffSub'))}</p></div>
       <form class="sb-form" data-sbform="staff" novalidate>
         <div class="field"><label for="sb-user">${esc(t('sbUser'))}</label><input id="sb-user" name="username" value="${esc(SBA.user)}" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-        <div class="field"><label for="sb-pass">${esc(t('sbPass'))}</label><input id="sb-pass" name="password" type="password" autocomplete="current-password" required></div>
+        <div class="field"><label for="sb-pass">${esc(t('sbPass'))}</label><div class="pw-row"><input id="sb-pass" name="password" type="password" autocomplete="current-password" required><button type="button" class="btn btn-line pw-show" data-sb="pwShow" aria-controls="sb-pass" aria-pressed="false">${esc(t('sbPwShow'))}</button></div></div>
         ${SBA.msgHtml()}
         <button class="btn btn-accent" type="submit" data-sbk="staffGo"${SBA.busy ? ' disabled' : ''}>${esc(SBA.busy ? t('sbSigningIn') : t('sbSignIn'))}</button>
       </form>
@@ -6416,6 +6417,8 @@ const SBA = {
   },
   async onClick(el){
     const d = el.dataset, k = d.sb;
+    if(k === 'pwShow'){ const inp = document.getElementById('sb-pass'); if(!inp) return; const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password'; el.setAttribute('aria-pressed', String(show)); el.textContent = t(show ? 'sbPwHide' : 'sbPwShow'); inp.focus(); return; }
     if(k === 'mode') return SBA.go(d.mode);
     if(k === 'start') return SBA.go('start');
     if(k === 'names') return SBA.go('names');
