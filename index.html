@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-IZEdV8sjaVghWBLXPbH6lR1uuVQTgWXBIgU/Erjn3Jc=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-DRl3CsVP4oCx3OjGSOx0PbaKCfRiTFlF2Q3oQpbZ97k=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -210,7 +210,7 @@ p{margin:0}
 .panel h2{font-size:21px;font-weight:800;display:flex;align-items:center;gap:10px}
 .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:14px;font-weight:700;white-space:nowrap}
 .pill-off{background:var(--sunk);color:var(--muted)}
-.pw-row{display:flex;gap:8px;align-items:stretch}.pw-row input{flex:1 1 auto;min-width:0;width:auto}.pw-row .pw-show{flex:0 0 auto;width:auto;min-width:84px;min-height:56px;margin:0}
+.pw-row{display:flex;gap:8px;align-items:stretch}.pw-row input{flex:1 1 auto;min-width:0;width:auto}.eye-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:56px;min-height:56px;padding:0;border-radius:var(--r-sm);border:2px solid var(--ink);background:var(--surface);color:var(--ink);cursor:pointer}.eye-btn svg{width:26px;height:26px}.eye-btn:focus-visible{outline:3px solid var(--focus,#1a5fd0);outline-offset:2px}.sb-pin-row{display:flex;align-items:center;justify-content:center;gap:14px}.sb-dots span.dig{border:0;width:auto;min-width:22px;height:auto;border-radius:0;font-size:24px;font-weight:800;line-height:22px;text-align:center}
 .sb-pin{font-size:22px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
 @media print{body *{visibility:hidden}.sb-pins,.sb-pins *{visibility:visible}.sb-pins{position:absolute;left:0;top:0;width:100%;border:0}.sb-pins .no-print{display:none}.sb-pins .scroll{overflow:visible}.sb-pin-tbl tr{page-break-inside:avoid}}
 .ph-cam{display:flex;flex-direction:column;align-items:center;gap:8px}
@@ -2818,7 +2818,7 @@ en:{
   sbStaff:'Coordinator or HR', sbStaffSub:'Sign in with your username and password.',
   sbPinTitle:'Hi {first}. Type your PIN', sbPinSub:'Your 6-number PIN from HR.', sbPinDots:'{n} of 6 numbers typed', sbPad:'PIN pad',
   sbClear:'Clear', sbBackKey:'Back', sbBackKeyLabel:'Delete last number', sbNotMe:'Not you? Choose another name', sbBack:'Back',
-  sbUser:'Username', sbPass:'Password', sbPwShow:'Show', sbPwHide:'Hide', sbSignIn:'Sign in', sbSigningIn:'Signing in…', sbLoadingNames:'Loading names…', sbRetry:'Try again',
+  sbUser:'Username', sbPass:'Password', sbPwShow:'Show password', sbPwHide:'Hide password', sbPinShow:'Show PIN', sbPinHide:'Hide PIN', sbSignIn:'Sign in', sbSigningIn:'Signing in…', sbLoadingNames:'Loading names…', sbRetry:'Try again',
   sbWrongPin:'That PIN did not work. Check it and try again.', sbWrongPass:'That username and password do not match. Try again.',
   sbTriesLeft:'{n} more tries before this device locks for 5 minutes.', sbTriesLeft1:'1 more try before this device locks for 5 minutes.',
   sbLockedT:'Locked for a few minutes', sbLocked:'Too many tries. Try again in {min} min. If you forgot your PIN, ask HR for a new one.',
@@ -3261,6 +3261,8 @@ const tm = ms => E.timeLabel(ms);
 
 /* ---------- icons ---------- */
 const I = {
+  eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeOff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>',
   camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -6209,11 +6211,12 @@ const SBA = {
       <div id="sb-list" class="sb-list">${SBA.listHtml()}</div>
       <button class="btn btn-quiet" data-sb="start" data-sbk="start">${esc(t('sbBack'))}</button></main>`;
     if(SBA.mode === 'pin' && SBA.pick){
-      const n = SBA.pin.length, dots = Array.from({ length: SBAUTH.PIN_LEN }, (_, i) => `<span class="${i < n ? 'on' : ''}"></span>`).join('');
+      const n = SBA.pin.length, dots = Array.from({ length: SBAUTH.PIN_LEN }, (_, i) => SBA.pinShow && i < n ? `<span class="dig">${esc(SBA.pin[i])}</span>` : `<span class="${i < n ? 'on' : ''}"></span>`).join('');
+      const pinLb = t(SBA.pinShow ? 'sbPinHide' : 'sbPinShow');
       const key = (k, label, cls, aria) => `<button type="button" class="sb-key${cls ? ' ' + cls : ''}" data-sb="key" data-k="${k}" data-sbk="key|${k}"${aria ? ` aria-label="${esc(aria)}"` : ''}${SBA.busy ? ' disabled' : ''}>${esc(label)}</button>`;
       return SBA.head() + `<main class="narrow">
         <div class="hello"><h1 id="sb-h" tabindex="-1">${esc(t('sbPinTitle', { first: first(SBA.pick.name) }))}</h1><p>${esc(t('sbPinSub'))}</p></div>
-        <div class="sb-dots" role="img" aria-label="${esc(t('sbPinDots', { n }))}">${dots}</div>
+        <div class="sb-pin-row"><div class="sb-dots" role="img" aria-label="${esc(t('sbPinDots', { n }))}">${dots}</div><button type="button" class="eye-btn" data-sb="pinShow" data-sbk="pinShow" aria-label="${esc(pinLb)}" title="${esc(pinLb)}">${SBA.pinShow ? I.eyeOff : I.eye}</button></div>
         ${SBA.msgHtml()}
         <div class="sb-pad" role="group" aria-label="${esc(t('sbPad'))}">${['1','2','3','4','5','6','7','8','9'].map(d => key(d, d)).join('')}${key('clear', t('sbClear'), 'sb-fn')}${key('0', '0')}${key('back', t('sbBackKey'), 'sb-fn', t('sbBackKeyLabel'))}</div>
         <button class="btn btn-quiet" data-sb="names" data-sbk="names">${esc(t('sbNotMe'))}</button></main>`;
@@ -6222,7 +6225,7 @@ const SBA = {
       <div class="hello"><h1 id="sb-h" tabindex="-1">${esc(t('sbStaff'))}</h1><p>${esc(t('sbStaffSub'))}</p></div>
       <form class="sb-form" data-sbform="staff" novalidate>
         <div class="field"><label for="sb-user">${esc(t('sbUser'))}</label><input id="sb-user" name="username" value="${esc(SBA.user)}" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
-        <div class="field"><label for="sb-pass">${esc(t('sbPass'))}</label><div class="pw-row"><input id="sb-pass" name="password" type="password" autocomplete="current-password" required><button type="button" class="btn btn-line pw-show" data-sb="pwShow" aria-controls="sb-pass" aria-pressed="false">${esc(t('sbPwShow'))}</button></div></div>
+        <div class="field"><label for="sb-pass">${esc(t('sbPass'))}</label><div class="pw-row"><input id="sb-pass" name="password" type="password" autocomplete="current-password" required><button type="button" class="eye-btn" data-sb="pwShow" data-sbk="pwShow" aria-controls="sb-pass" aria-label="${esc(t('sbPwShow'))}" title="${esc(t('sbPwShow'))}">${I.eye}</button></div></div>
         ${SBA.msgHtml()}
         <button class="btn btn-accent" type="submit" data-sbk="staffGo"${SBA.busy ? ' disabled' : ''}>${esc(SBA.busy ? t('sbSigningIn') : t('sbSignIn'))}</button>
       </form>
@@ -6254,7 +6257,7 @@ const SBA = {
     if(f && f !== document.activeElement) f.focus({ preventScroll: true });
   },
   go(mode){
-    SBA.mode = mode; SBA.msg = ''; SBA.info = false; SBA.pin = ''; SBA.busy = false;
+    SBA.mode = mode; SBA.msg = ''; SBA.info = false; SBA.pin = ''; SBA.busy = false; SBA.pinShow = false;
     if(mode !== 'pin') SBA.pick = null;
     if(mode === 'names' && (!SBA.names || SBA.namesErr)) SBA.loadNames();
     SBA.paint(mode === 'names' ? '#sb-q' : mode === 'staff' ? '#sb-user' : '#sb-h');
@@ -6418,12 +6421,13 @@ const SBA = {
   async onClick(el){
     const d = el.dataset, k = d.sb;
     if(k === 'pwShow'){ const inp = document.getElementById('sb-pass'); if(!inp) return; const show = inp.type === 'password';
-      inp.type = show ? 'text' : 'password'; el.setAttribute('aria-pressed', String(show)); el.textContent = t(show ? 'sbPwHide' : 'sbPwShow'); inp.focus(); return; }
+      inp.type = show ? 'text' : 'password'; const lb = t(show ? 'sbPwHide' : 'sbPwShow'); el.setAttribute('aria-label', lb); el.title = lb; el.innerHTML = show ? I.eyeOff : I.eye; return; }
+    if(k === 'pinShow'){ SBA.pinShow = !SBA.pinShow; SBA.paint('[data-sb=pinShow]'); return; }
     if(k === 'mode') return SBA.go(d.mode);
     if(k === 'start') return SBA.go('start');
     if(k === 'names') return SBA.go('names');
     if(k === 'retry') return SBA.loadNames();
-    if(k === 'pick'){ SBA.pick = (SBA.names || []).find(n => n.id === d.id) || null; if(SBA.pick){ SBA.mode = 'pin'; SBA.pin = ''; SBA.msg = ''; SBA.paint('#sb-h'); window.scrollTo(0, 0); } return; }
+    if(k === 'pick'){ SBA.pick = (SBA.names || []).find(n => n.id === d.id) || null; if(SBA.pick){ SBA.mode = 'pin'; SBA.pin = ''; SBA.pinShow = false; SBA.msg = ''; SBA.paint('#sb-h'); window.scrollTo(0, 0); } return; }
     if(k === 'key') return SBA.press(d.k);
     if(k === 'out') return SBA.signOut('user');
     if(k === 'stay'){ SBA.last = Date.now(); return SBA.hideWarn(); }
