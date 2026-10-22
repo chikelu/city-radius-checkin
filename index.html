@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-OblgAPwcM1t/Kgo3mqGEDmHfOVdUa+0tW65iLJXwO8w=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-3ydr2Vv66L0ohFkrPiVzMuF9n9ETiwJsMqrHLB3LqTg=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -211,6 +211,7 @@ p{margin:0}
 .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:14px;font-weight:700;white-space:nowrap}
 .pill-off{background:var(--sunk);color:var(--muted)}
 .pw-row{display:flex;gap:8px;align-items:stretch}.pw-row input{flex:1 1 auto;min-width:0;width:auto}.eye-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:56px;min-height:56px;padding:0;border-radius:var(--r-sm);border:2px solid var(--ink);background:var(--surface);color:var(--ink);cursor:pointer}.eye-btn svg{width:26px;height:26px}.eye-btn:focus-visible{outline:3px solid var(--focus,#1a5fd0);outline-offset:2px}.sb-pin-row{display:flex;align-items:center;justify-content:center;gap:14px}.sb-dots span.dig{border:0;width:auto;min-width:22px;height:auto;border-radius:0;font-size:24px;font-weight:800;line-height:22px;text-align:center}
+.ph-file-btn{position:relative;cursor:pointer}.ph-file-btn.is-busy{opacity:.7;pointer-events:none}.ph-file{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}.ph-file-btn:focus-within{outline:3px solid var(--focus,#1a5fd0);outline-offset:2px}
 .sb-pin{font-size:22px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
 @media print{body *{visibility:hidden}.sb-pins,.sb-pins *{visibility:visible}.sb-pins{position:absolute;left:0;top:0;width:100%;border:0}.sb-pins .no-print{display:none}.sb-pins .scroll{overflow:visible}.sb-pin-tbl tr{page-break-inside:avoid}}
 .ph-cam{display:flex;flex-direction:column;align-items:center;gap:8px}
@@ -2842,7 +2843,7 @@ en:{
   sbe_INACTIVE:'This person is inactive on the roster.', sbe_NOT_FOUND:'Not found. Reload and try again.',
   phTitle:'Clock-in photo', phLead:'Show only your face. Your coordinator uses this photo to see it was you. It is deleted after {days} days.',
   phTake:'Take photo and clock in', phSkip:'Clock in without a photo', phNoCamBtn:'Clock in',
-  phStarting:'Starting the camera…', phNoCam:'The camera is off or not allowed on this phone. You can still clock in. Your coordinator will see “No camera”.',
+  phStarting:'Starting the camera…', phNoCam:'The live camera does not work in this browser. Tap “Take a photo” to use your phone’s camera instead.', phPhoneCam:'Take a photo', phSaving:'Saving photo…',
   phPreview:'Camera preview',
   phGrabFail:'The photo did not work. Try again, or clock in without a photo.', 
   phCol:'Photo', phOf:'Clock-in photo of {name}', phAt:'Clocked in at {time}', phSkipped:'No photo', phNoCamera:'No camera', phMissing:'Photo not received',
@@ -3361,10 +3362,36 @@ function photoSheet(){
   const btns = st === 'live'
     ? `<button class="btn btn-go" data-act="photoTake"${dis}>${I.camera}${esc(t('phTake'))}</button><button class="btn btn-line" data-act="photoSkip"${dis}>${esc(t('phSkip'))}</button>`
     : st === 'starting' ? `<button class="btn btn-line" data-act="photoSkip"${dis}>${esc(t('phSkip'))}</button>`
-    : `<button class="btn btn-go" data-act="photoNoCam"${dis}>${I.clock}${esc(t('phNoCamBtn'))}</button>`;
+    : `<label class="btn btn-go ph-file-btn${cam.busy ? ' is-busy' : ''}">${I.camera}${esc(t(cam.busy ? 'phSaving' : 'phPhoneCam'))}<input id="ph-file" class="ph-file" type="file" accept="image/*" capture="user"${dis}></label>
+       <button class="btn btn-line" data-act="photoNoCam"${dis}>${esc(t('phSkip'))}</button>`;
   return `<h2 id="sheet-h">${esc(t('phTitle'))}</h2><p class="lead">${esc(t('phLead',{days:PHOTO.keepDays}))}</p>
     <div class="ph-cam">${view}</div>${btns}<button class="btn btn-quiet" data-act="close"${dis}>${esc(t('cancel'))}</button>`;
 }
+// iPhone / in-app browsers without a live camera: the phone's own camera via a file input, cut to the same square JPEG
+function fileToJpeg(file){
+  return new Promise(res => {
+    if(!file || !/^image\//.test(file.type || 'image/')) return res(null);
+    const u = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth, h = img.naturalHeight, n = PHOTO.size, side = Math.min(w, h);
+      if(!side){ URL.revokeObjectURL(u); return res(null); }
+      const c = document.createElement('canvas'); c.width = n; c.height = n;
+      c.getContext('2d').drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, n, n);
+      URL.revokeObjectURL(u);
+      c.toBlob(b => res(b && b.size ? b : null), 'image/jpeg', PHOTO.quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); res(null); };
+    img.src = u;
+  });
+}
+document.addEventListener('change', async ev => {
+  const el = ev.target; if(!el || el.id !== 'ph-file' || cam.busy) return;
+  const f = el.files && el.files[0]; if(!f) return;
+  cam.busy = true; render();
+  const blob = await fileToJpeg(f); cam.busy = false;
+  if(!blob){ toast(t('phGrabFail'), true); render(); return; }
+  await clockInWithPhoto({status:'taken', id:uuid()}, blob);
+});
 async function clockInWithPhoto(photo, blob){
   const p = me(); if(!p) return;
   cam.busy = true; render();
