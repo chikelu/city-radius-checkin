@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-3ydr2Vv66L0ohFkrPiVzMuF9n9ETiwJsMqrHLB3LqTg=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-g/CNyarsCXZrSWVAgXRTfEVvSikjLOTfo/vJ9y7kQAE=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -653,10 +653,26 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     return found;
   }
 
-  function providerLoad(state, providerId, date) {
+  // All offered/active visits for a member today (a member who needs 2 providers can have two).
+  function currentAssignments(state, memberId, date) {
     return assignmentsOn(state, date).filter(function (a) {
-      return a.providerId === providerId && (a.status === 'offered' || a.status === 'active');
-    }).length;
+      return a.memberId === memberId && (a.status === 'offered' || a.status === 'active');
+    }).sort(function (x, y) { return (x.offeredAt || 0) - (y.offeredAt || 0); });
+  }
+  // Providers a member needs at the same time: 1 (default) or 2.
+  function staffNeedOf(m) { return m && Number(m.staffNeed) === 2 ? 2 : 1; }
+  // How a 2-provider member counts toward each provider's limit: 'all' = fills both providers (default), 'one' = counts as 1.
+  function pairLoadOf(s) { return s && s.pairLoad === 'one' ? 'one' : 'all'; }
+  function loadWeight(state, memberId, s) {
+    if (staffNeedOf(member(state, memberId)) !== 2 || pairLoadOf(s) === 'one') return 1;
+    return Math.max(1, maxRatioOf(s));
+  }
+  function providerLoad(state, providerId, date, s) {
+    var load = 0;
+    assignmentsOn(state, date).forEach(function (a) {
+      if (a.providerId === providerId && (a.status === 'offered' || a.status === 'active')) load += s ? loadWeight(state, a.memberId, s) : 1;
+    });
+    return load;
   }
 
   function maxRatioOf(s) { return s && typeof s.maxRatio === 'number' ? s.maxRatio : 0; }
@@ -691,10 +707,11 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     }
     return null;
   }
-  function checkRoom(state, providerId, siteId, date) {
-    var max = maxRatioOf(site(state, siteId));
-    var load = providerLoad(state, providerId, date);
-    if (load >= max) return fail('PROVIDER_FULL', { providerName: providerName(state, providerId), max: max, load: load });
+  function checkRoom(state, providerId, siteId, date, memberId) {
+    var s = site(state, siteId), max = maxRatioOf(s);
+    var load = providerLoad(state, providerId, date, s);
+    var add = memberId ? loadWeight(state, memberId, s) : 1;
+    if (load + add > max) return fail('PROVIDER_FULL', { providerName: providerName(state, providerId), max: max, load: load, pair: add > 1 || undefined });
     return null;
   }
 
@@ -774,11 +791,15 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       var siteId = open.siteId;
       var err = checkTarget(state, a.providerId, siteId, date);
       if (err) return err;
-      var cur = currentAssignment(state, m.id, date);
-      if (cur) {
-        return fail('MEMBER_BUSY', { memberName: m.name, providerName: providerName(state, cur.providerId), status: cur.status });
+      var curs = currentAssignments(state, m.id, date), need = staffNeedOf(m);
+      if (curs.some(function (x) { return x.providerId === a.providerId; })) {
+        return fail('SAME_PROVIDER', { memberName: m.name, providerName: providerName(state, a.providerId) });
       }
-      err = checkRoom(state, a.providerId, siteId, date);
+      if (curs.length >= need) {
+        var cur = curs[curs.length - 1];
+        return fail('MEMBER_BUSY', { memberName: m.name, providerName: providerName(state, cur.providerId), status: cur.status, need: need });
+      }
+      err = checkRoom(state, a.providerId, siteId, date, m.id);
       if (err) return err;
       var asg = newOffer(state, ctx, date, m.id, a.providerId, siteId, null);
       var ev = makeEvent(ctx, date, 'offer', { siteId: siteId, memberId: m.id, providerId: a.providerId, assignmentId: asg.id });
@@ -826,6 +847,14 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       var by = ctx.by == null ? null : ctx.by;
       var upd = withFields(asg, { status: 'ended', endedAt: ctx.now, endReason: 'member_left', endMethod: a.method, leaveReason: a.reason, endedBy: by });
       var writes = [{ col: 'assignments', id: upd.id, doc: upd }];
+      // a member with two providers leaves both: end the other visit and drop any open offer
+      currentAssignments(state, asg.memberId, asg.date).forEach(function (x) {
+        if (x.id === asg.id) return;
+        var o = x.status === 'active'
+          ? withFields(x, { status: 'ended', endedAt: ctx.now, endReason: 'member_left', endMethod: a.method, leaveReason: a.reason, endedBy: by })
+          : withFields(x, { status: 'withdrawn', endedAt: ctx.now, endReason: 'member_left', endedBy: by });
+        writes.push({ col: 'assignments', id: o.id, doc: o });
+      });
       var open = openCheckin(state, asg.memberId, asg.date);
       if (open) {
         var c = withFields(open, { checkedOutAt: ctx.now });
@@ -851,6 +880,14 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
         notesCompleted: false, notesAt: null, notesBy: null
       });
       var writes = [{ col: 'assignments', id: undone.id, doc: undone }];
+      // the second provider's visit ended by the same tap comes back too
+      arr(state.assignments).forEach(function (x) {
+        if (x.id === asg.id || x.memberId !== asg.memberId || x.date !== asg.date || x.status !== 'ended' || x.endReason !== 'member_left' || x.endedAt !== asg.endedAt) return;
+        var xsh = shiftFor(state, x.providerId, x.date);
+        if (xsh && !isClockedIn(xsh)) return;
+        var ux = withFields(x, { status: 'active', endedAt: null, endReason: null, endMethod: null, leaveReason: null, endedBy: null, notesCompleted: false, notesAt: null, notesBy: null });
+        writes.push({ col: 'assignments', id: ux.id, doc: ux });
+      });
       var reopenedOther = openCheckin(state, asg.memberId, asg.date);
       if (!reopenedOther) {
         var c = null;
@@ -864,15 +901,18 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     reassign: function (state, a, ctx, date) {
       var m = member(state, a.memberId);
       if (!m) return fail('NOT_FOUND', { what: 'member', id: a.memberId });
-      var cur = currentAssignment(state, m.id, date);
-      if (!cur) {
+      var curs = currentAssignments(state, m.id, date);
+      if (!curs.length) {
         return handlers.offer(state, { memberId: a.memberId, providerId: a.toProviderId }, ctx, date);
       }
-      if (cur.providerId === a.toProviderId) {
-        return fail('SAME_PROVIDER', { memberName: m.name, providerName: providerName(state, cur.providerId) });
+      // with two providers, fromProviderId says which one is being replaced (default: the newest)
+      var cur = curs[curs.length - 1];
+      if (a.fromProviderId) curs.forEach(function (x) { if (x.providerId === a.fromProviderId) cur = x; });
+      if (curs.some(function (x) { return x.providerId === a.toProviderId; })) {
+        return fail('SAME_PROVIDER', { memberName: m.name, providerName: providerName(state, a.toProviderId) });
       }
       var siteId = cur.siteId;
-      var err = checkTarget(state, a.toProviderId, siteId, date) || checkRoom(state, a.toProviderId, siteId, date);
+      var err = checkTarget(state, a.toProviderId, siteId, date) || checkRoom(state, a.toProviderId, siteId, date, m.id);
       if (err) return err;
       var by = ctx.by == null ? null : ctx.by;
       var old = cur.status === 'active'
@@ -1225,15 +1265,18 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       var c = openCheckin(state, m.id, date);
       if (!c || c.siteId !== siteId) return;
       var mineToday = todays.filter(function (a) { return a.memberId === m.id; });
-      if (mineToday.some(function (a) { return a.status === 'active'; })) return;
-      var offer = null;
-      mineToday.forEach(function (a) { if (a.status === 'offered' && (!offer || a.offeredAt > offer.offeredAt)) offer = a; });
+      var need = staffNeedOf(m);
+      var withNow = mineToday.filter(function (a) { return a.status === 'active'; });
+      if (withNow.length >= need) return;
+      var offer = null, offers = [];
+      mineToday.forEach(function (a) { if (a.status === 'offered') { offers.push(a); if (!offer || a.offeredAt > offer.offeredAt) offer = a; } });
       // Waiting clock restarts when a visit ends (e.g. reassigned) during this checkin.
       var since = c.checkedInAt;
       mineToday.forEach(function (a) {
         if (a.status === 'ended' && a.endedAt != null && a.endedAt >= c.checkedInAt && a.endedAt > since) since = a.endedAt;
       });
-      waiting.push({ member: m, checkin: c, waitMin: minutesBetween(since, now), offer: offer });
+      waiting.push({ member: m, checkin: c, waitMin: minutesBetween(since, now), offer: offer, offers: offers,
+        need: need, withNow: withNow, open: need - withNow.length - offers.length });
     });
     waiting.sort(function (x, y) { return (y.waitMin - x.waitMin) || byName(x.member.name, y.member.name); });
 
@@ -1257,7 +1300,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
           freeSinceMin = minutesBetween(since, now);
         }
       }
-      var room = day.clockedIn ? maxRatio - day.active.length - day.offers.length : 0;
+      var room = day.clockedIn ? maxRatio - providerLoad(state, p.id, date, s) : 0;
       if (room < 0) room = 0;
       var notesMissing = day.finished.filter(function (a) { return !a.notesCompleted; }).length;
       providers.push({
@@ -2032,7 +2075,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     var taken = {}; list.forEach(function (o) { taken[o.id] = true; });
     var clean = isP
       ? { name: String(rec.name).trim().replace(/\s+/g, ' '), siteId: rec.siteId, kind: rec.kind || 'employee', payrollId: cleanPayrollId(rec.payrollId), active: rec.active !== false }
-      : { name: String(rec.name).trim().replace(/\s+/g, ' '), siteId: rec.siteId, clientId: String(rec.clientId || '').trim(), program: rec.program || '', vtrackId: rec.vtrackId || '', active: rec.active !== false };
+      : { name: String(rec.name).trim().replace(/\s+/g, ' '), siteId: rec.siteId, clientId: String(rec.clientId || '').trim(), program: rec.program || '', vtrackId: rec.vtrackId || '', staffNeed: staffNeedOf(rec), active: rec.active !== false };
     var idx = originalId ? list.findIndex(function (o) { return o.id === originalId; }) : -1;
     var id;
     if (idx >= 0) { id = list[idx].id; list[idx] = Object.assign({}, list[idx], clean); }
@@ -2170,7 +2213,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     wd = wd.filter(function (d) { if (seen[d] || !(d >= 0 && d <= 6 && d % 1 === 0)) return false; seen[d] = true; return true; }).sort(function (a, b) { return a - b; });
     var st = String(s.startTime == null ? '' : s.startTime).trim();
     return { name: String(s.name || '').trim().replace(/\s+/g, ' '), maxRatio: num(s.maxRatio, NaN), signoffHour: num(s.signoffHour, DEFAULT_SIGNOFF_HOUR),
-      workDays: wd, startTime: st || null, earlyClockInMin: earlyMinOf(s) };
+      workDays: wd, startTime: st || null, earlyClockInMin: earlyMinOf(s), pairLoad: pairLoadOf(s) };
   }
   // errors block saving; warnings are shown but allowed
   function validateSite(rost, s, originalId) {
@@ -2207,6 +2250,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     var id;
     if (idx >= 0) { id = list[idx].id; list[idx] = Object.assign({}, list[idx], clean); }
     else { id = slugId('s', clean.name, taken); list.push(Object.assign({ id: id }, clean)); }
+    var si = idx >= 0 ? idx : list.length - 1;
+    if (n.pairLoad === 'one') list[si].pairLoad = 'one'; else delete list[si].pairLoad; // default 'all' is not stored
     var out = Object.assign({}, rost); out.sites = list;
     return { ok: true, roster: out, id: id, errors: [], warnings: v.warnings };
   }
@@ -2519,6 +2564,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       if (o.startAt === null) return;
       out.forEach(function (p, j) {
         if (i === j || p.startAt === null || !namesMatch(o.row.client, p.row.client)) return;
+        // a member who needs 2 providers is expected on two rows at once (two different providers)
+        if (o.member && staffNeedOf(o.member) === 2 && !namesMatch(o.row.provider || '', p.row.provider || '')) return;
         if (overlaps(o.startAt, o.endAt, p.startAt, p.endAt)) {
           o.issues.push(issue('member_overlap', 'review', o.row, { otherRowNo: p.row.rowNo }));
         }
@@ -2784,6 +2831,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     visitMinutes: visitMinutes,
     providerDay: providerDay,
     board: board,
+    staffNeedOf: staffNeedOf, pairLoadOf: pairLoadOf, currentAssignments: currentAssignments,
     validateSite: validateSite,
     siteUpsert: siteUpsert,
     siteWorkDays: siteWorkDays,
@@ -2934,7 +2982,12 @@ en:{
   err_ALREADY_CLOCKED_IN:'You are already clocked in today.', err_AFTER_HOURS:'Clock-in closes at 6 pm.',
   err_ALREADY_HERE:'This member is already checked in.', err_MEMBER_NOT_HERE:'This member is not checked in.',
   err_PROVIDER_NOT_CLOCKED_IN:'That provider is not clocked in.', err_MEMBER_BUSY:'This member already has a provider or an offer.',
-  err_PROVIDER_FULL:'That provider already has the most members allowed.', err_NOT_OFFERED:'This offer is no longer open. Your coordinator may have changed it.',
+  err_PROVIDER_FULL:'That provider already has the most members allowed. A member who needs 2 providers needs providers with no other members.',
+  pairPill:'Needs 2 providers · {n} of 2', loadFullPair:'Full (2-provider member)', pairTag:'2 providers', pairWith:'With {provider} now.', pairAlso:'also with {names}',
+  giveSecond:'Add second provider', opt_pairBusy:'Has other members: needs to be free for this member',
+  pairNeeds:'{first} needs 2 providers at the same time.', pairSecond:'{first} needs a second provider. {provider} is already with them.',
+  roFStaff:'Providers needed', roFStaff1:'1 provider', roFStaff2:'2 providers at the same time',
+  siFPair:'Member who needs 2 providers', siPairAll:'Fills both providers (no other members)', siPairOne:'Counts as 1 member for each provider', err_NOT_OFFERED:'This offer is no longer open. Your coordinator may have changed it.',
   err_NOT_ACTIVE:'This visit has already ended.', err_SAME_PROVIDER:'The member is already with that provider.',
   undo:'Undo', undoneToast:'Undone. {first} is with you again.', undoneCoord:'Undone. {first} is back with {provider}.', undoExpired:'Too late to undo. Ask your coordinator to fix it.',
   alsoOffer:'You also have a new member waiting. Tap Accept below.',
@@ -4294,7 +4347,8 @@ function rosterForm(){
       <div class="field"><label for="rf-payroll">${esc(t('roFPayroll'))}</label><input id="rf-payroll" data-rf="payrollId" value="${esc(e.rec.payrollId||'')}" autocomplete="off" spellcheck="false" maxlength="12"><span class="muted" style="font-size:14px">${esc(t('roFPayrollHelp'))}</span></div>`
     : `
       <div class="field"><label for="rf-client">${esc(t('roFClient'))}</label><input id="rf-client" data-rf="clientId" value="${esc(e.rec.clientId||'')}" autocomplete="off" spellcheck="false" maxlength="20"></div>
-      <div class="field"><label for="rf-program">${esc(t('roFProgram'))}</label><select id="rf-program" data-rf="program"><option value="">${esc(t('roFNoProgram'))}</option>${E.PROGRAMS.map(x => `<option ${e.rec.program===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>`;
+      <div class="field"><label for="rf-program">${esc(t('roFProgram'))}</label><select id="rf-program" data-rf="program"><option value="">${esc(t('roFNoProgram'))}</option>${E.PROGRAMS.map(x => `<option ${e.rec.program===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>
+      <div class="field"><label for="rf-staff">${esc(t('roFStaff'))}</label><select id="rf-staff" data-rf="staffNeed"><option value="1" ${E.staffNeedOf(e.rec)===1?'selected':''}>${esc(t('roFStaff1'))}</option><option value="2" ${E.staffNeedOf(e.rec)===2?'selected':''}>${esc(t('roFStaff2'))}</option></select></div>`;
   const wasOff = e.id && e.rec.active === false;
   return `<section class="panel ro-form" aria-labelledby="ro-form-h"><h2 id="ro-form-h">${esc(title)}</h2>
     <div class="filters">
@@ -4346,7 +4400,7 @@ function rosterView(){
   const issues = E.rosterCheck(state.roster).filter(i => i.kind === kind);
   const siteName = id => ((state.roster.sites||[]).find(x => x.id === id) || {}).name || id;
   const head = isP ? ['roColName','roColSite','roColType','roColStatus','roColPayroll'] : ['roColName','roColSite','roColProgram','roColStatus','roColClient'];
-  const body = rows.map(o => `<tr class="${o.active===false?'ro-off':''}"><th scope="row" class="ro-name">${esc(o.name)}</th><td>${esc(siteName(o.siteId))}</td>
+  const body = rows.map(o => `<tr class="${o.active===false?'ro-off':''}"><th scope="row" class="ro-name">${esc(o.name)}${E.staffNeedOf(o) === 2 ? ` <span class="pill pill-offer">${esc(t('pairTag'))}</span>` : ''}</th><td>${esc(siteName(o.siteId))}</td>
       <td>${esc(isP ? t('kind_'+(o.kind||'employee')) : (o.program || '–'))}</td>
       <td>${o.active === false ? `<span class="pill">${esc(t('roInactive'))}</span>` : `<span class="pill pill-serving">${esc(t('roActive'))}</span>`}</td>
       <td class="num muted">${esc((isP ? o.payrollId : o.clientId) || '–')}${isP && (o.kind||'employee')==='employee' && !o.payrollId && o.active !== false ? ' <b class="att-bang" aria-hidden="true">!</b>' : ''}</td>
@@ -4387,6 +4441,7 @@ function siForm(){
     <div class="filters">
       <div class="field"><label for="si-name">${esc(t('siFName'))}</label><input id="si-name" data-si="name" value="${esc(e.rec.name||'')}" autocomplete="off" maxlength="60"></div>
       <div class="field"><label for="si-ratio">${esc(t('siFRatio'))}</label><select id="si-ratio" data-si="maxRatio">${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${Number(e.rec.maxRatio)===n?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="field"><label for="si-pair">${esc(t('siFPair'))}</label><select id="si-pair" data-si="pairLoad"><option value="all" ${E.pairLoadOf(e.rec)==='all'?'selected':''}>${esc(t('siPairAll'))}</option><option value="one" ${E.pairLoadOf(e.rec)==='one'?'selected':''}>${esc(t('siPairOne'))}</option></select></div>
       <div class="field"><label for="si-signoff">${esc(t('siFSignoff'))}</label><select id="si-signoff" data-si="signoffHour">${hours.map(h => `<option value="${h}" ${hour===h?'selected':''}>${esc(siTime(h*60))}${h===18?' '+esc(t('siDefault')):''}</option>`).join('')}</select></div>
     </div>
     <p class="muted" style="font-size:15px">${esc(t('siSignoffHelp'))}</p>
@@ -5194,13 +5249,19 @@ function coordView(){
     const m = w.member;
     const lastA = (state.assignments||[]).filter(x => x.memberId === m.id && x.date === date).sort((x,y)=>(y.offeredAt||0)-(x.offeredAt||0))[0];
     const declined = !w.offer && lastA && lastA.status === 'declined' ? `<p class="declined">${esc(t('declinedLine',{provider:provider(lastA.providerId).name, first:first(m.name), reason:t('declineShort_'+(lastA.declineReason||'other'))}))}</p>` : '';
-    const off = w.offer ? `<p class="meta">${esc(t('offeredTo',{provider:provider(w.offer.providerId).name, dur:dur(E.minutesBetween(w.offer.offeredAt, now))}))}</p>` : '';
-    const actions = w.offer
+    const pair = w.need === 2;
+    const off = pair ? (w.offers||[]).map(o => `<p class="meta">${esc(t('offeredTo',{provider:provider(o.providerId).name, dur:dur(E.minutesBetween(o.offeredAt, now))}))} <button class="btn btn-sm" data-act="withdraw" data-id="${esc(o.id)}">${esc(t('cancelOffer'))}</button></p>`).join('')
+      : w.offer ? `<p class="meta">${esc(t('offeredTo',{provider:provider(w.offer.providerId).name, dur:dur(E.minutesBetween(w.offer.offeredAt, now))}))}</p>` : '';
+    const withLine = pair && w.withNow.length ? `<p class="meta">${esc(t('pairWith',{provider:w.withNow.map(a => provider(a.providerId).name).join(', ')}))}</p>` : '';
+    const actions = pair
+      ? (w.open > 0 ? `<button class="btn btn-sm primary" data-act="assignOpen" data-member="${esc(m.id)}">${esc(t((w.withNow.length + (w.offers||[]).length) ? 'giveSecond' : 'giveTo'))}</button>` : '')
+      : w.offer
       ? `<button class="btn btn-sm" data-act="withdraw" data-id="${esc(w.offer.id)}">${esc(t('cancelOffer'))}</button><button class="btn btn-sm primary" data-act="moveOpen" data-member="${esc(m.id)}">${esc(t('giveElse'))}</button>`
       : `<button class="btn btn-sm primary" data-act="assignOpen" data-member="${esc(m.id)}">${esc(t('giveTo'))}</button>`;
+    const pairPill = pair ? `<span class="pill pill-offer num">${esc(t('pairPill',{n:w.withNow.length}))}</span>` : '';
     return `<div class="row${w.offer?' row-pending':''}">
-      <div class="row-top"><b>${esc(m.name)}</b><span class="pill ${w.waitMin>=10?'pill-free':'pill-count'} num">${esc(t('waitingFor',{dur:dur(w.waitMin)}))}</span></div>
-      ${off}${declined}<div class="row-actions">${actions}</div></div>`;
+      <div class="row-top"><b>${esc(m.name)}</b>${pairPill}<span class="pill ${w.waitMin>=10?'pill-free':'pill-count'} num">${esc(t('waitingFor',{dur:dur(w.waitMin)}))}</span></div>
+      ${withLine}${off}${declined}${actions ? `<div class="row-actions">${actions}</div>` : ''}</div>`;
   }).join('') : `<p class="empty">${esc(t('noWaiting'))}</p>`;
   const later = b.notArrived.length ? `<details class="later"><summary>${esc(t('notHere',{n:b.notArrived.length}))}</summary>
     <p class="note">${esc(t('checkInNote'))}</p>
@@ -5217,20 +5278,22 @@ function coordView(){
     else if(pv.state === 'free') pill = `<span class="pill pill-free num">${esc(t('st_free',{dur:dur(pv.freeSinceMin)}))}</span>`;
     else if(pv.state === 'offer') pill = `<span class="pill pill-offer">${esc(t('st_offer'))}</span>`;
     else pill = `<span class="pill pill-serving">${esc(t('st_serving',{n:pv.load}))}</span>`;
-    const loadPill = d.clockedIn ? `<span class="pill pill-count num">${esc(t('load',{n:pv.load, max:s.maxRatio}))}</span>` : '';
+    const loadPill = d.clockedIn ? `<span class="pill pill-count num">${esc(pv.room <= 0 && pv.load > 0 && pv.load < s.maxRatio ? t('loadFullPair') : t('load',{n:pv.load, max:s.maxRatio}))}</span>` : '';
     const meta = (d.clockedIn ? `<span class="meta num">${esc(t('clockedSince',{time:tm(d.clockInAt)}))}</span>` : d.signedOff ? `<span class="meta num">${esc(t('inOut',{start:tm(d.clockInAt), end:tm(d.signedOffAt)}))}</span>` : d.autoSignedOff ? `<span class="meta num">${esc(t('inOut',{start:tm(d.clockInAt), end:tm(d.finalEndAt || d.autoSignedOffAt)}))}</span>` : '') + (d.shift ? photoThumb(d.shift, p.name) : '');
     const notesPill = pv.notesMissing ? `<span class="pill pill-offer num">${esc(t('notesMissingPill',{n:pv.notesMissing}))}</span>` : pv.visitsEnded ? `<span class="pill pill-serving">${esc(t('notesDonePill'))}</span>` : '';
     const items = d.active.map(a => {
       const m = member(a.memberId);
-      return `<div class="mitem"><div class="grow"><b>${esc(m.name)}</b><small class="num">${esc(t('coordSince',{provider:first(p.name), time:tm(a.acceptedAt)}))} · ${esc(dur(E.visitMinutes(a, now)))}</small></div>
-        <button class="btn btn-sm" data-act="moveOpen" data-member="${esc(a.memberId)}">${esc(t('move'))}</button>
+      const mate = E.staffNeedOf(m) === 2 ? E.currentAssignments(eff(), a.memberId, date).filter(x => x.providerId !== p.id).map(x => first(provider(x.providerId).name)) : [];
+      const pairTag = E.staffNeedOf(m) === 2 ? ` <span class="pill pill-offer">${esc(t('pairTag'))}</span>` : '';
+      return `<div class="mitem"><div class="grow"><b>${esc(m.name)}</b>${pairTag}<small class="num">${esc(t('coordSince',{provider:first(p.name), time:tm(a.acceptedAt)}))} · ${esc(dur(E.visitMinutes(a, now)))}${mate.length ? ' · ' + esc(t('pairAlso',{names:mate.join(', ')})) : ''}</small></div>
+        <button class="btn btn-sm" data-act="moveOpen" data-member="${esc(a.memberId)}" data-from="${esc(p.id)}">${esc(t('move'))}</button>
         <button class="btn btn-sm" data-act="coordLeaveOpen" data-id="${esc(a.id)}">${esc(t('left'))}</button></div>`;
     }).concat(d.offers.map(a => {
       const m = member(a.memberId);
       return `<div class="mitem pending"><div class="grow"><b>${esc(m.name)}</b><small class="num">${esc(t('pendingOffer',{member:first(m.name), dur:dur(E.minutesBetween(a.offeredAt, now))}))}</small></div>
         <button class="btn btn-sm" data-act="withdraw" data-id="${esc(a.id)}">${esc(t('cancelOffer'))}</button></div>`;
     })).join('');
-    const give = d.clockedIn && pv.room > 0 && b.waiting.some(w => !w.offer) ? `<div class="row-actions"><button class="btn btn-sm" data-act="pickMemberOpen" data-id="${esc(p.id)}">${esc(t('giveMember',{first:first(p.name)}))}</button></div>` : '';
+    const give = d.clockedIn && pv.room > 0 && b.waiting.some(w => (w.need === 2 ? w.open > 0 : !w.offer)) ? `<div class="row-actions"><button class="btn btn-sm" data-act="pickMemberOpen" data-id="${esc(p.id)}">${esc(t('giveMember',{first:first(p.name)}))}</button></div>` : '';
     return `<div class="row prov${pv.state==='off'?' off':''}"><div class="row-top"><b>${esc(p.name)}</b>${pill}${loadPill}${notesPill}${meta}</div>
       ${items ? `<div class="mlist">${items}</div>` : ''}${give}</div>`;
   }).join('');
@@ -5328,21 +5391,26 @@ function sheetBody(sh){
   if(sh.kind === 'assign' || sh.kind === 'move'){
     const m = member(sh.memberId), f = first(m.name);
     const b = E.board(eff(), ui.siteId, date, now);
-    const cur = (state.assignments||[]).find(x => x.memberId === m.id && x.date === date && (x.status==='active'||x.status==='offered'));
+    const curs = E.currentAssignments(eff(), m.id, date);
+    const cur = sh.kind === 'move' ? (curs.find(x => x.providerId === sh.fromProviderId) || curs[curs.length-1]) : curs[curs.length-1];
     if(sh.kind === 'move' && !cur) return null;
-    const max = (siteOf(ui.siteId)||{}).maxRatio;
+    const site0 = siteOf(ui.siteId)||{}, max = site0.maxRatio;
+    const pairW = E.staffNeedOf(m) === 2 && E.pairLoadOf(site0) === 'all' ? Math.max(1, max||1) : 1;
     const opts = b.providers.map(pv => {
       const p = pv.provider;
       let sub, ok = false;
-      if(cur && cur.providerId === p.id) sub = t('opt_current',{first:f});
+      if(curs.some(x => x.providerId === p.id)) sub = t('opt_current',{first:f});
       else if(pv.state === 'signed_off') sub = t('opt_signed_off');
       else if(!pv.day.clockedIn) sub = t('opt_off');
       else if(pv.room <= 0) sub = t('opt_full',{n:pv.load+pv.day.offers.length, max});
+      else if(pv.room < pairW) sub = t('opt_pairBusy');
       else { ok = true; sub = pv.state === 'free' ? t('opt_free',{dur:dur(pv.freeSinceMin)}) : t('opt_room',{n:pv.load, max}); }
       return {p, sub, ok, sortKey:(ok?0:1)*1000 + (pv.state==='free'?0:1)*100 + pv.load};
     }).sort((x,y)=>x.sortKey-y.sortKey);
-    const note = sh.kind === 'move' && cur && cur.status === 'active'
-      ? t('moveNote',{provider:provider(cur.providerId).name, first:f}) : t('assignNote',{first:f});
+    const others = curs.filter(x => x !== cur || sh.kind !== 'move');
+    const note = (sh.kind === 'move' && cur && cur.status === 'active'
+      ? t('moveNote',{provider:provider(cur.providerId).name, first:f}) : t('assignNote',{first:f}))
+      + (E.staffNeedOf(m) === 2 ? ' ' + (sh.kind === 'assign' && others.length ? t('pairSecond',{first:f, provider:provider(others[0].providerId).name}) : t('pairNeeds',{first:f})) : '');
     return `<h2 id="sheet-h">${esc(t(sh.kind==='move'?'moveTitle':'assignTitle',{name:m.name}))}</h2>
       <p class="note">${esc(note)}</p>
       ${opts.map(o => `<button class="opt" ${o.ok?'':'disabled'} data-act="${sh.kind==='move'?'moveDo':'assignDo'}" data-id="${esc(o.p.id)}"><span class="avatar">${esc(initials(o.p.name))}</span><span class="grow">${esc(o.p.name)}<small class="num">${esc(o.sub)}</small></span></button>`).join('')}
@@ -5401,10 +5469,10 @@ function sheetBody(sh){
   if(sh.kind === 'pickMember'){
     const p = provider(sh.providerId);
     const b = E.board(eff(), ui.siteId, date, now);
-    const ws = b.waiting.filter(w => !w.offer);
+    const ws = b.waiting.filter(w => (w.need === 2 ? w.open > 0 && !w.withNow.concat(w.offers||[]).some(a => a.providerId === sh.providerId) : !w.offer));
     return `<h2 id="sheet-h">${esc(t('pickMemberTitle',{name:p.name}))}</h2>
       <p class="note">${esc(t('assignNoteAny'))}</p>
-      ${ws.length ? ws.map(w => `<button class="opt" data-act="pickMemberDo" data-member="${esc(w.member.id)}"><span class="avatar">${esc(initials(w.member.name))}</span><span class="grow">${esc(w.member.name)}<small class="num">${esc(t('waitingFor',{dur:dur(w.waitMin)}))}</small></span></button>`).join('') : `<p class="empty">${esc(t('noneWaiting'))}</p>`}
+      ${ws.length ? ws.map(w => `<button class="opt" data-act="pickMemberDo" data-member="${esc(w.member.id)}"><span class="avatar">${esc(initials(w.member.name))}</span><span class="grow">${esc(w.member.name)}<small class="num">${esc(t('waitingFor',{dur:dur(w.waitMin)}))}${w.need === 2 ? ' · ' + esc(t('pairPill',{n:w.withNow.length})) : ''}</small></span></button>`).join('') : `<p class="empty">${esc(t('noneWaiting'))}</p>`}
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
   }
   return null;
@@ -5587,7 +5655,7 @@ document.addEventListener('click', async ev => {
     /* coordinator */
     case 'site': ui.siteId = d.id; LS.set('site', d.id); render(); break;
     case 'assignOpen': ui.sheet = {kind:'assign', memberId:d.member}; render(); break;
-    case 'moveOpen': ui.sheet = {kind:'move', memberId:d.member}; render(); break;
+    case 'moveOpen': ui.sheet = {kind:'move', memberId:d.member, fromProviderId:d.from || null}; render(); break;
     case 'pickMemberOpen': ui.sheet = {kind:'pickMember', providerId:d.id}; render(); break;
     case 'assignDo': case 'pickMemberDo': {
       const memberId = k === 'assignDo' ? ui.sheet.memberId : d.member;
@@ -5599,7 +5667,7 @@ document.addEventListener('click', async ev => {
     }
     case 'moveDo': {
       const memberId = ui.sheet.memberId;
-      const r = await act({type:'reassign', memberId, toProviderId:d.id});
+      const fromP = ui.sheet.fromProviderId; const r = await act(fromP ? {type:'reassign', memberId, fromProviderId:fromP, toProviderId:d.id} : {type:'reassign', memberId, toProviderId:d.id});
       ui.sheet = null; render();
       if(r.ok) toast(t('moveToast',{first:first(member(memberId).name), provider:provider(d.id).name}));
       break;
@@ -5894,17 +5962,17 @@ const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/d
   // keep in step with supabase/functions/act/logic.mjs (test_t11.js compares them)
   mapSite(r){ const s = {id:r.id, name:r.name, maxRatio:r.max_ratio, signoffHour:r.signoff_hour};
     if(Array.isArray(r.work_days)) s.workDays = r.work_days.map(Number); if(r.start_time != null) s.startTime = r.start_time;
-    if(r.early_clock_in_min != null) s.earlyClockInMin = r.early_clock_in_min; if(r.active === false) s.active = false; return s; },
+    if(r.early_clock_in_min != null) s.earlyClockInMin = r.early_clock_in_min; if(r.pair_load === 'one') s.pairLoad = 'one'; if(r.active === false) s.active = false; return s; },
   mapProvider(r){ const p = {id:r.id, name:r.name, siteId:r.site_id, kind:r.kind || 'employee', payrollId:r.payroll_id || ''}; if(r.active === false) p.active = false; return p; },
   mapMember(r){ const m = {id:r.id, name:r.name, siteId:r.site_id}; if(r.vtrack_id != null) m.vtrackId = r.vtrack_id; if(r.client_id != null) m.clientId = r.client_id;
-    if(r.program != null) m.program = r.program; if(r.active === false) m.active = false; return m; },
+    if(r.program != null) m.program = r.program; if(Number(r.staff_need) === 2) m.staffNeed = 2; if(r.active === false) m.active = false; return m; },
   mapRoster(rows){ const by = (a,b) => String(a.id).localeCompare(String(b.id));
     return { sites:(rows.sites||[]).slice().sort(by).map(SBMAP.mapSite), providers:(rows.providers||[]).slice().sort(by).map(SBMAP.mapProvider), members:(rows.members||[]).slice().sort(by).map(SBMAP.mapMember) }; },
   siteRow(s){ return {id:s.id, name:s.name, max_ratio:s.maxRatio == null ? 4 : s.maxRatio, signoff_hour:s.signoffHour == null ? 18 : s.signoffHour,
     work_days:Array.isArray(s.workDays) ? s.workDays.map(Number) : [1,2,3,4,5], start_time:s.startTime || null,
-    early_clock_in_min:s.earlyClockInMin == null ? null : s.earlyClockInMin, active:s.active !== false}; },
+    early_clock_in_min:s.earlyClockInMin == null ? null : s.earlyClockInMin, pair_load:s.pairLoad === 'one' ? 'one' : 'all', active:s.active !== false}; },
   providerRow(p){ return {id:p.id, name:p.name, site_id:p.siteId, kind:p.kind === 'contractor' ? 'contractor' : 'employee', payroll_id:p.payrollId ? String(p.payrollId) : null, active:p.active !== false}; },
-  memberRow(m){ return {id:m.id, name:m.name, site_id:m.siteId, vtrack_id:m.vtrackId || null, client_id:m.clientId || null, program:m.program || null, active:m.active !== false}; },
+  memberRow(m){ return {id:m.id, name:m.name, site_id:m.siteId, vtrack_id:m.vtrackId || null, client_id:m.clientId || null, program:m.program || null, staff_need:Number(m.staffNeed) === 2 ? 2 : 1, active:m.active !== false}; },
   mapConfig(r, lockRows){ r = r || {}; const locks = {};
     (lockRows||[]).forEach(l => { locks[String(l.period_from).slice(0,10) + '_' + String(l.period_to).slice(0,10)] = l.snapshot; });
     return {practice:!!r.practice, payAnchor:r.pay_anchor || '2026-09-27', payLength:r.pay_length || 14, payDate:r.pay_date || null, run:r.run_settings || {},
