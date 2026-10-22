@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-DRl3CsVP4oCx3OjGSOx0PbaKCfRiTFlF2Q3oQpbZ97k=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-wmPheeEgNqeW6D5RdN9NNl3zUvhS1eztv7KVKQCBp5U=' 'sha256-OblgAPwcM1t/Kgo3mqGEDmHfOVdUa+0tW65iLJXwO8w=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -6434,6 +6434,9 @@ const SBA = {
     if(k === 'secretDone'){ SBA.ro.shown = null; render(); return; }
     if(k === 'bulkGo') return SBA.bulkGo();
     if(k === 'bulkPrint'){ try{ window.print(); }catch(e){} return; }
+    if(k === 'bulkRe'){ SBA.bulk.confirm = true; render(); return; }
+    if(k === 'bulkReNo'){ SBA.bulk.confirm = false; render(); return; }
+    if(k === 'bulkReGo') return SBA.bulkReGo();
     if(k === 'bulkDone'){ SBA.bulk.pins = null; SBA.bulk.failed = []; render(); return; }
     if(k === 'staffAdd'){ SBA.ro.form = { loginName: '', role: 'coordinator', siteId: ((state.roster.sites || []).find(s => s.active !== false) || {}).id || '' }; SBA.ro.msg = ''; render(); setTimeout(() => { const i = document.getElementById('sb-nu'); if(i) i.focus(); }, 30); return; }
     if(k === 'staffCancel'){ SBA.ro.form = null; SBA.ro.msg = ''; render(); return; }
@@ -6446,6 +6449,19 @@ const SBA = {
   },
   // ---- HR: sign-ins for everyone at once + a printable PIN sheet (PINs live only on this screen, never saved) ----
   bulk: { running: false, done: 0, total: 0, pins: null, failed: [], at: 0 },
+  bulkHave(){ return (state.roster.providers || []).filter(p => p.active !== false).map(p => ({ p, L: SBA.loginFor(p.id) })).filter(x => x.L && x.L.active).sort((a, b) => E.byLastName(a.p.name, b.p.name)); },
+  async bulkReGo(){
+    const B = SBA.bulk; if(B.running) return;
+    const have = SBA.bulkHave(); if(!have.length) return;
+    Object.assign(B, { confirm: false, running: true, done: 0, total: have.length, pins: [], failed: [], at: Date.now() }); render();
+    for(const x of have){
+      let r; try{ r = await SBA.admin({ action: 'setSecret', userId: x.L.user_id }); }catch(e){ r = { ok: false, code: 'NET' }; }
+      if(r && r.ok && r.secret) B.pins.push({ name: x.p.name, pin: String(r.secret) }); else B.failed.push(x.p.name);
+      B.done++; render();
+    }
+    B.running = false; render(); window.scrollTo(0, 0);
+    setTimeout(() => { const h = document.getElementById('sb-pins-h'); if(h) h.focus(); }, 50);
+  },
   bulkNeed(){ return (state.roster.providers || []).filter(p => p.active !== false && !SBA.loginFor(p.id)).sort((a, b) => E.byLastName(a.name, b.name)); },
   bulkBox(){
     if(!SBA.logins) return '';
@@ -6460,7 +6476,13 @@ const SBA = {
         <div class="row-actions no-print"><button class="btn btn-sm primary btn-accent" data-sb="bulkPrint">${esc(t('sbBulkPrint'))}</button><button class="btn btn-sm btn-line" data-sb="bulkDone">${esc(t('sbBulkDone'))}</button></div></section>`;
     }
     if(B.running) return `<section class="panel" aria-live="polite"><h2>${esc(t('sbBulkTitle'))}</h2><p class="num">${esc(t('sbBulkProgress', { done: B.done, total: B.total }))}</p></section>`;
-    if(!need.length) return '';
+    if(!need.length){
+      const have = SBA.bulkHave(); if(!have.length) return '';
+      return `<section class="panel"><h2>${esc(t('sbReTitle'))}</h2><p>${esc(t('sbReHelp', { n: have.length }))}</p>
+        ${B.confirm ? `<p class="banner" role="alert">${esc(t('sbReWarn', { n: have.length }))}</p>
+        <div class="row-actions"><button class="btn btn-sm primary btn-accent" data-sb="bulkReGo"${SBA.ro.busy ? ' disabled' : ''}>${esc(t('sbReYes', { n: have.length }))}</button><button class="btn btn-sm btn-quiet" data-sb="bulkReNo">${esc(t('sbCancel'))}</button></div>`
+        : `<div class="row-actions"><button class="btn btn-sm btn-line" data-sb="bulkRe"${SBA.ro.busy ? ' disabled' : ''}>${esc(t('sbReBtn'))}</button></div>`}</section>`;
+    }
     return `<section class="panel"><h2>${esc(t('sbBulkTitle'))}</h2><p>${esc(t('sbBulkHelp', { n: need.length }))}</p>
       <div class="row-actions"><button class="btn btn-sm primary btn-accent" data-sb="bulkGo"${SBA.ro.busy ? ' disabled' : ''}>${esc(t('sbBulkGo', { n: need.length }))}</button></div></section>`;
   },
@@ -6490,8 +6512,11 @@ const SBA = {
   }
 };
 Object.assign(T.en, {
+  sbReTitle:'Lost the PIN sheet?', sbReHelp:'PINs are never saved, so they cannot be shown again. You can give all {n} providers a new PIN and print a new sheet.',
+  sbReBtn:'New PINs for everyone', sbReWarn:'Every old PIN stops working right away. Only do this if the old sheet was not handed out, or you can hand out the new one now.',
+  sbReYes:'Yes, make {n} new PINs',
   sbBulkTitle:'Sign-ins for everyone', sbBulkHelp:'{n} active providers have no sign-in yet. Create them all at once and print a PIN sheet.',
-  sbBulkGo:'Create {n} sign-ins', sbBulkProgress:'Creating sign-ins: {done} of {total}…',
+  sbBulkGo:'Create {n} sign-ins', sbBulkProgress:'Making PINs: {done} of {total}…',
   sbBulkSheetTitle:'PIN sheet', sbBulkSheetNote:'Print this now and give each person only their own PIN. PINs are not saved anywhere: when you leave this screen (or after 15 minutes) they are gone. A lost PIN is replaced with New PIN.',
   sbBulkPin:'PIN', sbBulkHow:'How to sign in', sbBulkHowText:'Tap "I work with members", tap your name, type this PIN.',
   sbBulkPrint:'Print PIN sheet', sbBulkDone:'Done, hide PINs', sbBulkFailed:'Could not create a sign-in for: {names}. Try again with Create sign-in on their row.'
