@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-0cwOz1IgAaR6sruE6YtgKMAB9a6ud6TPo7QJ5X1PN2s=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-QdXhvc7AWOoMP9W5JJkTDmcg9SUjeQCGtV5suLghbB4=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -3126,7 +3126,7 @@ en:{
   rWarn:'{n} days are not verified yet. Fix them before running payroll.', rWarn1:'1 day is not verified yet. Fix it before running payroll.',
   rLoading:'Loading those dates…', rEmpty:'No timesheets for these dates and filters.',
   tabRoster:'Roster', roTitle:'Roster', roSub:'Add, change or turn off the providers and members the app knows about. Turning someone off keeps their past hours.',
-  roProviders:'Providers', roMembers:'Members', roSearch:'Search by name', roShowInactive:'Show people who are turned off',
+  roProviders:'Providers', roMembers:'Members', roSearch:'Search by name', roSiteF:'Location', roSiteAll:'All locations', roShowInactive:'Show people who are turned off',
   roAddProvider:'Add a provider', roAddMember:'Add a member', roEdit:'Edit', roActive:'Active', roInactive:'Turned off',
   roColName:'Name', roColSite:'Site', roColType:'Type', roColPayroll:'Payroll ID', roColProgram:'Program', roColClient:'Client ID', roColStatus:'Status',
   roNone:'Nobody matches.', roCount:'{n} shown',
@@ -4327,12 +4327,14 @@ async function alDownload(){
   await saveFile(`activity-log_${slug(A.siteId === 'all' ? 'all-sites' : siteLabel(A.siteId))}_${from}_to_${to}.csv`, csv, {what: 'activity', format: 'csv', rows: R.list.length, from, to, siteId: A.siteId});
 }
 /* ---------- roster admin (T-02) ---------- */
-function rosterState(){ return ui.ro = ui.ro || {tab:'providers', q:'', showOff:false, edit:null, importText:'', plan:null, pick:{}, importSite:null, importKind:'employee'}; }
+function rosterState(){ return ui.ro = ui.ro || {tab:'providers', q:'', site:'all', showOff:false, edit:null, importText:'', plan:null, pick:{}, importSite:null, importKind:'employee'}; }
+function roSiteHit(o){ const s = rosterState().site; return !s || s === 'all' || o.siteId === s; }
 function rosterRowsFor(kind){
   const r = rosterState(), q = (r.q||'').trim().toLowerCase();
   const list = kind === 'providers' ? (state.roster.providers||[]) : (state.roster.members||[]);
   const qk = E.nameKey(q);
-  return list.filter(o => (r.showOff || o.active !== false) && nameHit(o.name, qk))
+  const sf = r.site && r.site !== 'all' ? r.site : null;   // location filter (HR / super user)
+  return list.filter(o => (r.showOff || o.active !== false) && (!sf || o.siteId === sf) && nameHit(o.name, qk))
     .sort((a,b) => a.name.localeCompare(b.name, undefined, {sensitivity:'base'}));
 }
 function roMsgs(list, prefix, cls){ return list.length ? `<div class="alert ${cls}">${list.map(c => `<p>${esc(t(prefix + c))}</p>`).join('')}</div>` : ''; }
@@ -4408,8 +4410,9 @@ function rosterView(){
   return `<main class="board">
     <div class="board-head"><h1>${esc(t('roTitle'))}</h1></div>${hrTabs()}${'' + SBA.secretBox()}
     <section class="panel"><p>${esc(t('roSub'))}</p>
-      <div class="seg" role="group"><button class="chipbtn" aria-pressed="${isP}" data-act="roTab" data-id="providers">${esc(t('roProviders'))} <span class="muted num">${(state.roster.providers||[]).filter(o=>o.active!==false).length}</span></button><button class="chipbtn" aria-pressed="${!isP}" data-act="roTab" data-id="members">${esc(t('roMembers'))} <span class="muted num">${(state.roster.members||[]).filter(o=>o.active!==false).length}</span></button>${siTabBtn(r.tab)}</div>
-      <div class="filters"><div class="field"><label for="ro-q">${esc(t('roSearch'))}</label><input id="ro-q" data-ro="q" value="${esc(r.q||'')}" autocomplete="off" type="search"></div>
+      <div class="seg" role="group"><button class="chipbtn" aria-pressed="${isP}" data-act="roTab" data-id="providers">${esc(t('roProviders'))} <span class="muted num">${(state.roster.providers||[]).filter(o=>o.active!==false && roSiteHit(o)).length}</span></button><button class="chipbtn" aria-pressed="${!isP}" data-act="roTab" data-id="members">${esc(t('roMembers'))} <span class="muted num">${(state.roster.members||[]).filter(o=>o.active!==false && roSiteHit(o)).length}</span></button>${siTabBtn(r.tab)}</div>
+      <div class="filters"><div class="field"><label for="ro-site">${esc(t('roSiteF'))}</label><select id="ro-site"><option value="all">${esc(t('roSiteAll'))}</option>${(state.roster.sites||[]).slice().sort((a,b) => String(a.name).localeCompare(String(b.name))).map(s => { const L = isP ? (state.roster.providers||[]) : (state.roster.members||[]), n = L.filter(o => o.siteId === s.id && (r.showOff || o.active !== false)).length; return `<option value="${esc(s.id)}"${r.site === s.id ? ' selected' : ''}>${esc(s.name)} (${n})</option>`; }).join('')}</select></div>
+        <div class="field"><label for="ro-q">${esc(t('roSearch'))}</label><input id="ro-q" data-ro="q" value="${esc(r.q||'')}" autocomplete="off" type="search"></div>
         <label class="ro-check"><input type="checkbox" id="ro-off" ${r.showOff?'checked':''}> ${esc(t('roShowInactive'))}</label></div>
     </section>
     <section class="panel"><h2>${esc(t('roChecks'))}</h2>${issues.length ? `<ul class="ro-issues">${issues.map(i => `<li>${esc(t('roi_'+i.code,{names:i.names.join(', ')}))}</li>`).join('')}</ul>` : `<p class="muted">${esc(t('roChecksNone'))}</p>`}</section>
@@ -5718,6 +5721,7 @@ document.addEventListener('change', async ev => {
   const ak = ev.target && ev.target.dataset && ev.target.dataset.al;
   if(ak && ak !== 'q' && ui.role === 'hr'){ const A = alState(); A[ak] = ev.target.value || (ak === 'from' || ak === 'to' ? today() : 'all'); A.shown = AL.PAGE; window.__roForce = ev.target.id; render(); return; }
   if(ev.target && ev.target.id === 'ro-off'){ rosterState().showOff = ev.target.checked; render(); return; }
+  if(ev.target && ev.target.id === 'ro-site'){ rosterState().site = ev.target.value; render(); return; }
   const pk = ev.target && ev.target.dataset && ev.target.dataset.ps;
   if(pk){ ui.ps = ui.ps || {payAnchor: config.payAnchor, payLength: Number(config.payLength||14), payDate: config.payDate||''}; ui.ps[pk] = pk === 'payLength' ? Number(ev.target.value) : ev.target.value; render(); return; }
   const rk = ev.target && ev.target.dataset && ev.target.dataset.rep;
