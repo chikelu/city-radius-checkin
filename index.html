@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-QdXhvc7AWOoMP9W5JJkTDmcg9SUjeQCGtV5suLghbB4=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-zRDj6RoOSw0/WwGMh3rM2R7u3KzLJbeSOaOrswtQOrk=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -201,6 +201,11 @@ p{margin:0}
 .count b{display:block;font-size:28px;font-weight:800}
 .count span{font-size:15px;color:var(--muted)}
 .count.hot{border:2px solid var(--offer-line);background:var(--offer-bg)}
+button.count{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;position:relative}
+button.count::after{content:'\203A';position:absolute;right:12px;top:8px;font-size:22px;color:var(--muted)}
+button.count:hover{border-color:var(--ink)}
+.jump-hi{outline:3px solid var(--offer-line);outline-offset:3px;border-radius:var(--r-md);transition:outline-color .4s}
+@media (prefers-reduced-motion: reduce){.jump-hi{transition:none}}
 .alerts{display:flex;flex-direction:column;gap:8px}
 .alert{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--alert-bg);border-left:6px solid var(--alert);border-radius:var(--r-sm);padding:10px 12px}
 .alert p{flex:1 1 260px;font-size:17px;font-weight:600}
@@ -5220,10 +5225,10 @@ function coordView(){
   const sites = (state.roster.sites||[]).map(x => `<button class="chipbtn" aria-pressed="${x.id===s.id}" data-act="site" data-id="${esc(x.id)}">${esc(x.name)}</button>`).join('');
   const c = b.counts;
   const counts = `<div class="counts">
-    <div class="count${c.waiting?' hot':''}"><b class="num">${c.waiting}</b><span>${esc(t('cWaiting'))}</span></div>
-    <div class="count"><b class="num">${c.offers}</b><span>${esc(t('cOffers'))}</span></div>
-    <div class="count${c.free && c.waiting?' hot':''}"><b class="num">${c.free}</b><span>${esc(t('cFree'))}</span></div>
-    <div class="count"><b class="num">${c.serving}</b><span>${esc(t('cServing'))}</span></div></div>`;
+    <button type="button" class="count${c.waiting?' hot':''}" data-act="jump" data-id="wait"><b class="num">${c.waiting}</b><span>${esc(t('cWaiting'))}</span></button>
+    <button type="button" class="count" data-act="jump" data-id="offers"><b class="num">${c.offers}</b><span>${esc(t('cOffers'))}</span></button>
+    <button type="button" class="count${c.free && c.waiting?' hot':''}" data-act="jump" data-id="free"><b class="num">${c.free}</b><span>${esc(t('cFree'))}</span></button>
+    <button type="button" class="count" data-act="jump" data-id="serving"><b class="num">${c.serving}</b><span>${esc(t('cServing'))}</span></button></div>`;
   const alerts = b.alerts.length ? `<div class="alerts">${b.alerts.map(al => {
     if(al.kind === 'offer_waiting'){
       const a = al.assignment, m = member(a.memberId), pr = provider(a.providerId);
@@ -5326,12 +5331,27 @@ function coordView(){
     
     ${counts}${alerts}${pastBox}${emptyBox}
     <div class="cols">
-      <section class="panel"><h2>${esc(t('cWaiting'))} <span class="pill pill-count num">${b.waiting.length}</span></h2>${waiting}${later}</section>
-      <section class="panel"><h2>${esc(t('providers'))}</h2>${provs}</section>
+      <section class="panel" id="fl-wait"><h2 tabindex="-1">${esc(t('cWaiting'))} <span class="pill pill-count num">${b.waiting.length}</span></h2>${waiting}${later}</section>
+      <section class="panel" id="fl-prov"><h2 tabindex="-1">${esc(t('providers'))}</h2>${provs}</section>
     </div>
     <section class="panel"><h2>${esc(t('activity'))}</h2>${log}</section>
     ${clearUi ? `<div class="foot">${clearUi}</div>` : ''}
   </main>`;
+}
+// Floor counters: tap to jump to the matching part of the Floor (handy on a phone)
+function floorJump(kind){
+  const wait = document.getElementById('fl-wait'), prov = document.getElementById('fl-prov');
+  const provRows = prov ? [...prov.querySelectorAll('.row.prov')] : [];
+  let el = null;
+  if(kind === 'offers') el = (wait && wait.querySelector('.row-pending')) || provRows.find(r => r.querySelector('.mitem.pending'));
+  else if(kind === 'free') el = provRows.find(r => r.querySelector('.pill-free'));
+  else if(kind === 'serving') el = provRows.find(r => r.querySelector('.mitem:not(.pending)'));
+  const box = kind === 'wait' || kind === 'offers' ? wait : prov, target = el || box;
+  if(!target) return;
+  const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: el ? 'center' : 'start' });
+  const h = box && box.querySelector('h2'); if(h) h.focus({ preventScroll: true });
+  target.classList.add('jump-hi'); setTimeout(() => target.classList.remove('jump-hi'), 1800);
 }
 function evText(e){
   const p = {member: e.memberId ? member(e.memberId).name : '', provider: e.providerId ? provider(e.providerId).name : '', from: e.fromProviderId ? provider(e.fromProviderId).name : ''};
@@ -5541,6 +5561,7 @@ document.addEventListener('click', async ev => {
       toast(r.ok ? t('autoDone',{n:r.event ? r.event.count : 0}) : t('autoNone'));
       render(); break;
     }
+    case 'jump': floorJump(d.id); break;
     case 'view': ui.view = d.id; if(d.id === 'activity' && ui.role === 'hr'){ alClear(); alState().shown = AL.PAGE; } render(); window.scrollTo(0,0); break;
     case 'alMore': if(ui.role === 'hr'){ alState().shown = (alState().shown || AL.PAGE) + AL.PAGE; render(); } break;
     case 'alRetry': alClear(); render(); break;
