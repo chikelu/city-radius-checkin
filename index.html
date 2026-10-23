@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-g/CNyarsCXZrSWVAgXRTfEVvSikjLOTfo/vJ9y7kQAE=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-i5JkgzJb+5CvHwlsYrhAtE+l74z4sa4lRqx8/iXjc+s=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -6190,7 +6190,8 @@ const PQ = {
     const c = SB.client;
     const r1 = await c.from('clockin_photos').insert({ id: it.id, path: it.path, site_id: it.siteId, provider_id: it.providerId, work_date: it.date });
     if(r1.error && r1.error.code !== '23505') return r1.error.code === '42501' && it.tries >= 3 ? 'drop' : false;   // refused 4 times: give up
-    const blob = await (await fetch(it.dataUrl)).blob();
+    const b64 = String(it.dataUrl).split(',')[1] || '', bin = atob(b64), u8 = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);   // not fetch(data:): the page's CSP blocks it
+    const blob = new Blob([u8], { type: 'image/jpeg' });
     const r2 = await c.storage.from('clockin-photos').upload(it.path, blob, { contentType: 'image/jpeg', upsert: false });
     if(r2.error && !/exist|duplicate/i.test(String(r2.error.message || '')) && String(r2.error.statusCode) !== '409') return false;
     return true;
