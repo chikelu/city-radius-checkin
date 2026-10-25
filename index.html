@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-zRDj6RoOSw0/WwGMh3rM2R7u3KzLJbeSOaOrswtQOrk=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-TDEMQH/UvGaL7Y0RO3K9qRzHMX+OD2GsCCvTmk9uruA=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -204,6 +204,9 @@ p{margin:0}
 button.count{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;position:relative}
 button.count::after{content:'\203A';position:absolute;right:12px;top:8px;font-size:22px;color:var(--muted)}
 button.count:hover{border-color:var(--ink)}
+.geo-site{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.geo-form{display:grid;gap:10px;padding:14px;margin:10px 0;border:2px solid var(--line);border-radius:var(--r-md)}
+.geo-pill{white-space:nowrap}
 .jump-hi{outline:3px solid var(--offer-line);outline-offset:3px;border-radius:var(--r-md);transition:outline-color .4s}
 @media (prefers-reduced-motion: reduce){.jump-hi{transition:none}}
 .alerts{display:flex;flex-direction:column;gap:8px}
@@ -2910,6 +2913,17 @@ en:{
   offTitle:'You are not clocked in', offText:'Tap the green button when you get to {site}.',
   clockIn:'Clock in',
   offHelp:'Clock in when you get here. Your time with a member starts when you tap Accept.',
+  geoNote:'Your location is checked once when you clock in and once when you sign off, to confirm you are at the site. It is kept for 90 days.',
+  geoAt:'At site', geoAway:'Away · {dist}', geoDenied:'Location not shared', geoNoLoc:'No location', geoMissing:'Location not received', geoNoSite:'Site location not set', geoAcc:'±{m} m',
+  geoTitle:'Location checks', geoSub:'Where each provider was when they clocked in and signed off, compared with the site. Kept 90 days, then deleted. Phone GPS inside a building can be off by 30–100 m, so treat “Away” as a reason to ask, not as proof.',
+  geoColDate:'Date', geoColSite:'Site', geoColProv:'Provider', geoColIn:'Clock in', geoColOut:'Sign off',
+  geoKChecks:'Checks', geoKAt:'At site', geoKAway:'Away', geoKNone:'Not shared or no location', geoOnly:'Show only problems', geoAllRows:'Show all',
+  geoDl:'Download location checks (CSV)', geoNone:'No location checks for these dates.', geoLoading:'Loading location checks…', geoErr:'Location checks are not available yet.',
+  geoSiteTitle:'Location check for each site', geoSiteHelp:'Set each site’s point once. Easiest: stand inside the building and tap “Use this device’s location”. Or, in Google Maps, right-click the building and copy the two numbers it shows.',
+  geoSiteNotSet:'Not set: clock-ins here are not checked', geoSiteSet:'Set · counts as at site within {r} m', geoPoint:'Map point (latitude, longitude)', geoRadius:'Counts as at site within',
+  geoHere:'Use this device’s location', geoHereBusy:'Finding this device’s location…', geoHereGot:'Found this device’s location (±{m} m). Tap Save to keep it.', geoClear:'Remove point',
+  geoBad:'Type two numbers, like 33.37210, -111.96350.', geoSaved:'Location saved for {name}.', geoCleared:'Location removed for {name}.',
+  geoHereFail:'Could not get this device’s location. Allow location for this site in the browser and try again.', geoSaveFail:'Could not save. Try again.', geoSiteErr:'Site locations are not available yet.',
   idleTitle:'You are clocked in', idleText:'No member yet. Stay close by. When your coordinator gives you a member, the member will show up on this screen.',
   checking:'Watching for new members',
   servingTitle1:'You are with 1 member', servingTitleN:'You are with {n} members',
@@ -3457,6 +3471,7 @@ async function clockInWithPhoto(photo, blob){
   camStop(); ui.sheet = null;
   if(r.ok){
     if(BACKEND === 'supabase' && blob && photo.status === 'taken'){ const sh = (state.shifts||[]).find(x => x.providerId === p.id && x.date === today()); if(sh) PQ.add({ id: photo.id, path: E.photoPath(sh), siteId: sh.siteId, providerId: sh.providerId, date: sh.date }, blob); }
+    if(BACKEND === 'supabase') GEO.record('in');
     toast(t('clockedToast',{time:tm(Date.now())}));
   }
   render();
@@ -3712,7 +3727,7 @@ function providerView(){
     status = `<section class="status is-off" aria-labelledby="st-h">
       <div class="status-head"><span class="status-ico">${I.clock}</span><div><h2 id="st-h">${esc(t('offTitle'))}</h2><p>${esc(t('offText',{site:site?site.name:''}))}</p></div></div>
       <button class="btn btn-go" data-act="clockIn">${I.clock}${esc(t('clockIn'))}</button>
-      <p class="muted" style="font-size:16px">${esc(t('offHelp'))}</p>
+      <p class="muted" style="font-size:16px">${esc(t('offHelp'))}</p>${'' + (BACKEND === 'supabase' ? `<p class="muted geo-note" style="font-size:15px">${esc(t('geoNote'))}</p>` : '')}
       ${speakBtn(t('offTitle')+'. '+t('offText',{site:site?site.name:''})+' '+t('offHelp'))}
     </section>`;
   } else if(day.active.length){
@@ -4058,12 +4073,12 @@ function reportsView(mode){
     body = `${kpis}${warn}<div class="tabs" role="group">${tabs}</div>${r.tab==='weeks'?`<p class="muted" style="font-size:15px">${esc(t('rWeeksNote'))}</p>`:''}${r.tab==='attendance' ? attendanceHtml(R) : `<p class="scroll-hint">${esc(t('scrollHint'))}</p>${tableHtml(r.tab, R)}`}${dl}`;
   }
   const recent = (ui.dlLog||[]).slice(0,8);
-  const recentBox = `<section class="panel"><h2>${esc(t('recent'))}</h2>${recent.length ? `<ul class="recent">${recent.map(x => `<li class="num">${esc(t('recentRow',{when:fmtDay(E.dateKey(x.at))+' '+tm(x.at), who:x.who, what: x.what === 'report' ? t('dlWhat_report') : x.what === 'my' ? t('dlWhat_my') : x.what === 'vtrack' ? t('tabVtrack') : x.what === 'eod' ? t('eodPdfTitle') : x.what === 'payroll' ? t('payWhat') : x.what === 'payroll_sheet' ? t('paySheetTitle') : x.what === 'activity' ? t('alTitle') : x.what === 'payroll_adjustment' ? t('adjDl') : x.what === 'contractor' ? t('conTitle') : t(TAB_KEY[x.what]||'tTimesheet'), format:x.format.toUpperCase(), rows:x.rows}))}</li>`).join('')}</ul>` : `<p class="empty">${esc(t('recentNone'))}</p>`}</section>`;
+  const recentBox = `<section class="panel"><h2>${esc(t('recent'))}</h2>${recent.length ? `<ul class="recent">${recent.map(x => `<li class="num">${esc(t('recentRow',{when:fmtDay(E.dateKey(x.at))+' '+tm(x.at), who:x.who, what: x.what === 'report' ? t('dlWhat_report') : x.what === 'my' ? t('dlWhat_my') : x.what === 'vtrack' ? t('tabVtrack') : x.what === 'eod' ? t('eodPdfTitle') : x.what === 'payroll' ? t('payWhat') : x.what === 'payroll_sheet' ? t('paySheetTitle') : x.what === 'activity' ? t('alTitle') : x.what === 'payroll_adjustment' ? t('adjDl') : x.what === 'contractor' ? t('conTitle') : x.what === 'locations' ? t('geoTitle') : t(TAB_KEY[x.what]||'tTimesheet'), format:x.format.toUpperCase(), rows:x.rows}))}</li>`).join('')}</ul>` : `<p class="empty">${esc(t('recentNone'))}</p>`}</section>`;
   return `<main class="board">
     <div class="board-head"><h1>${esc(mode==='hr'?t('rHrTitle'):t('coordTitle'))}</h1>${sites}</div>
     ${mode==='coord' ? viewTabs() : hrTabs()}
     <section class="panel">${filters}</section>
-    ${body}
+    ${body}${'' + geoReport(mode, R)}
     ${recentBox}
   </main>`;
 }
@@ -4493,7 +4508,7 @@ function sitesView(){
     <section class="panel"><div class="row-actions" style="justify-content:space-between"><h2 style="margin:0">${esc(t('siListTitle'))}</h2>${S.edit ? '' : `<button class="btn btn-sm primary" data-act="siAdd">${esc(t('siAdd'))}</button>`}</div>
       <p class="scroll-hint">${esc(t('scrollHint'))}</p><div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl ro-tbl si-tbl"><thead><tr>${['siColName','siColSignoff','siColDays','siColEarly','siColRatio'].map(k => `<th scope="col">${esc(t(k))}</th>`).join('')}<th scope="col"><span class="sr">${esc(t('roEdit'))}</span></th></tr></thead><tbody>${body}</tbody></table></div>
     </section>
-    ${siHolidays()}
+    ${siHolidays()}${'' + geoSitesPanel()}
   </main>`;
 }
 async function siAct(act, d){
@@ -5287,7 +5302,7 @@ function coordView(){
     else if(pv.state === 'offer') pill = `<span class="pill pill-offer">${esc(t('st_offer'))}</span>`;
     else pill = `<span class="pill pill-serving">${esc(t('st_serving',{n:pv.load}))}</span>`;
     const loadPill = d.clockedIn ? `<span class="pill pill-count num">${esc(pv.room <= 0 && pv.load > 0 && pv.load < s.maxRatio ? t('loadFullPair') : t('load',{n:pv.load, max:s.maxRatio}))}</span>` : '';
-    const meta = (d.clockedIn ? `<span class="meta num">${esc(t('clockedSince',{time:tm(d.clockInAt)}))}</span>` : d.signedOff ? `<span class="meta num">${esc(t('inOut',{start:tm(d.clockInAt), end:tm(d.signedOffAt)}))}</span>` : d.autoSignedOff ? `<span class="meta num">${esc(t('inOut',{start:tm(d.clockInAt), end:tm(d.finalEndAt || d.autoSignedOffAt)}))}</span>` : '') + (d.shift ? photoThumb(d.shift, p.name) : '');
+    const meta = (d.clockedIn ? `<span class="meta num">${esc(t('clockedSince',{time:tm(d.clockInAt)}))}</span>` : d.signedOff ? `<span class="meta num">${esc(t('inOut',{start:tm(d.clockInAt), end:tm(d.signedOffAt)}))}</span>` : d.autoSignedOff ? `<span class="meta num">${esc(t('inOut',{start:tm(d.clockInAt), end:tm(d.finalEndAt || d.autoSignedOffAt)}))}</span>` : '') + (d.shift ? photoThumb(d.shift, p.name) : '') + (d.shift ? geoTag(d.shift) : '');
     const notesPill = pv.notesMissing ? `<span class="pill pill-offer num">${esc(t('notesMissingPill',{n:pv.notesMissing}))}</span>` : pv.visitsEnded ? `<span class="pill pill-serving">${esc(t('notesDonePill'))}</span>` : '';
     const items = d.active.map(a => {
       const m = member(a.memberId);
@@ -5603,7 +5618,9 @@ document.addEventListener('click', async ev => {
     case 'switch': ui.mytime = false; ui.view = 'board'; ui.rep = null; ui.fix = null; ui.checkout = false; ui.role = null; ui.meId = null; ui.sheet = null; LS.set('role', null); LS.set('me', null); render(); break;
     
     case 'speak': speak(d.text); break;
+    case 'geoEdit': case 'geoHere': case 'geoSave': case 'geoClear': case 'geoCancel': case 'geoOnly': case 'geoDl': await geoAct(d.act, d); break;
     case 'clockIn': {
+      if(BACKEND === 'supabase') GEO.start();
       if(PHOTO.on){
         // check first, so nobody takes a photo for a clock-in that will be refused
         const p0 = me(), pre = E.apply(eff(), {type:'clockIn', providerId:p0.id, siteId:p0.siteId}, {now:Date.now(), by:byId(), ids:newId});
@@ -5611,7 +5628,7 @@ document.addEventListener('click', async ev => {
         ui.sheet = {kind:'photo', _fresh:true}; camStart(); render(); break;
       }
       const p = me(); const r = await act({type:'clockIn', providerId:p.id, siteId:p.siteId});
-      if(r.ok) toast(t('clockedToast',{time:tm(Date.now())}));
+      if(r.ok){ if(BACKEND === 'supabase') GEO.record('in'); toast(t('clockedToast',{time:tm(Date.now())})); }
       break;
     }
     case 'photoTake': {
@@ -5649,8 +5666,9 @@ document.addEventListener('click', async ev => {
     }
     case 'signOff': {
       const p = me();
+      if(BACKEND === 'supabase') GEO.start();
       const r = await act({type:'signOff', providerId:p.id, attestation:t('attestTick'), lang});
-      if(r.ok){ ui.checkout = false; ui.attest = false; render(); window.scrollTo(0,0); toast(t('signedToast',{time:tm(Date.now())})); }
+      if(r.ok){ if(BACKEND === 'supabase') GEO.record('out'); ui.checkout = false; ui.attest = false; render(); window.scrollTo(0,0); toast(t('signedToast',{time:tm(Date.now())})); }
       break;
     }
     case 'declineOpen': ui.sheet = {kind:'decline', assignmentId:d.id}; render(); break;
@@ -5717,6 +5735,7 @@ document.addEventListener('input', ev => {
   if(ev.target && ev.target.dataset && ev.target.dataset.rf && ui.ro && ui.ro.edit){ ui.ro.edit.rec[ev.target.dataset.rf] = ev.target.value; return; }
   if(ev.target && ev.target.dataset && ev.target.dataset.pickq){ ui.pickQ = ev.target.value; clearTimeout(window.__roQ); window.__roQ = setTimeout(() => { window.__roForce = 'pick-q'; draw(); }, 200); return; }
   if(ev.target && ev.target.dataset && ev.target.dataset.al === 'q' && ui.role === 'hr'){ alState().q = ev.target.value; alState().shown = AL.PAGE; clearTimeout(window.__roQ); window.__roQ = setTimeout(() => { window.__roForce = 'al-q'; draw(); }, 250); return; }
+  if(ev.target && ev.target.id === 'geo-pt' && GEOS.edit){ GEOS.edit.pt = ev.target.value; return; }
   if(ev.target && ev.target.dataset && ev.target.dataset.ro === 'q'){ rosterState().q = ev.target.value; clearTimeout(window.__roQ); window.__roQ = setTimeout(() => { window.__roForce = 'ro-q'; draw(); }, 250); return; }
   if(ev.target && ev.target.dataset && ev.target.dataset.vt === 'text'){ vt.text = ev.target.value; return; }
   if(ev.target && ev.target.dataset && ev.target.dataset.vt === 'staffText'){ vt.staffText = ev.target.value; return; }
@@ -5743,6 +5762,7 @@ document.addEventListener('change', async ev => {
   if(ak && ak !== 'q' && ui.role === 'hr'){ const A = alState(); A[ak] = ev.target.value || (ak === 'from' || ak === 'to' ? today() : 'all'); A.shown = AL.PAGE; window.__roForce = ev.target.id; render(); return; }
   if(ev.target && ev.target.id === 'ro-off'){ rosterState().showOff = ev.target.checked; render(); return; }
   if(ev.target && ev.target.id === 'ro-site'){ rosterState().site = ev.target.value; render(); return; }
+  if(ev.target && ev.target.id === 'geo-r' && GEOS.edit){ GEOS.edit.r = Number(ev.target.value) || 150; return; }
   const pk = ev.target && ev.target.dataset && ev.target.dataset.ps;
   if(pk){ ui.ps = ui.ps || {payAnchor: config.payAnchor, payLength: Number(config.payLength||14), payDate: config.payDate||''}; ui.ps[pk] = pk === 'payLength' ? Number(ev.target.value) : ev.target.value; render(); return; }
   const rk = ev.target && ev.target.dataset && ev.target.dataset.rep;
@@ -6029,7 +6049,7 @@ const SB = {
     if(!session) return SB.block('signin');
     const me = await c.from('app_users').select('role, site_id, provider_id, active').eq('user_id', session.user.id).maybeSingle();
     if(me.error || !me.data || me.data.active === false) return SB.block('norole');
-    SB.me = me.data; setTimeout(() => { try{ PQ.flush(); }catch(e){} }, 1500);
+    SB.me = me.data; setTimeout(() => { try{ PQ.flush(); }catch(e){} try{ GQ.flush(); }catch(e){} }, 1500);
     ui.role = me.data.role; ui.meId = me.data.provider_id || null; if(me.data.site_id) ui.siteId = me.data.site_id;
     c.auth.onAuthStateChange(ev => { if(ev === 'SIGNED_OUT') SB.block('signin'); });
     SB.blocked = false; SB.why = '';
@@ -6237,6 +6257,218 @@ const PQ = {
   }
 };
 window.addEventListener('online', () => PQ.flush());
+
+// T-35: location check at clock-in and sign-off. One reading each time, sent to clockin_locations; the database works out
+// "at site" / "away" from the site's saved point. Kept on the phone until stored (like photos); deleted after 90 days.
+const GEO_SINCE = Date.parse('2026-10-25T19:00:00Z');   // clock-ins before this had no location check
+const GEO = {
+  pending: null,
+  start(){ try{ this.pending = this.read(); }catch(e){ this.pending = null; } },
+  read(){
+    return new Promise(res => {
+      let done = false; const fin = v => { if(!done){ done = true; res(Object.assign({ at: Date.now() }, v)); } };
+      if(!navigator.geolocation) return fin({ status: 'unavailable' });
+      setTimeout(() => fin({ status: 'timeout' }), 20000);
+      try{
+        navigator.geolocation.getCurrentPosition(
+          p => fin({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }),
+          e => fin({ status: e && e.code === 1 ? 'denied' : e && e.code === 3 ? 'timeout' : 'unavailable' }),
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+      }catch(e){ fin({ status: 'unavailable' }); }
+    });
+  },
+  async record(kind){
+    const p = me(); if(!p){ this.pending = null; return; }
+    const sh = (state.shifts||[]).find(x => x.providerId === p.id && x.date === today());
+    const v = await (this.pending || this.read()); this.pending = null;
+    if(!sh) return;
+    const ok = v.lat != null && isFinite(v.lat) && isFinite(v.lng);
+    GQ.add({ id: uuid(), shift_id: sh.id, kind, site_id: sh.siteId, provider_id: sh.providerId, work_date: sh.date,
+      lat: ok ? v.lat : null, lng: ok ? v.lng : null, accuracy_m: ok ? v.acc : null, status: ok ? 'away' : (v.status || 'unavailable'),
+      captured_at: new Date(v.at).toISOString() });
+  }
+};
+const GQ = {
+  items: (() => { const x = LS.get('geoq', []); return Array.isArray(x) ? x : []; })(), busy: false, timer: 0,
+  save(){ this.items = this.items.slice(-20); LS.set('geoq', this.items); },
+  add(row){ this.items.push(Object.assign({ tries: 0 }, row)); this.save(); this.flush(); },
+  async send(it){
+    const row = Object.assign({}, it); delete row.tries;
+    const r = await SB.client.from('clockin_locations').insert(row);
+    if(!r.error || r.error.code === '23505') return true;
+    return r.error.code === '42501' && r.status === 403 && it.tries >= 3 ? 'drop' : false;   // 401 = signed out: keep it
+  },
+  async flush(){
+    if(this.busy || !this.items.length || !SB.client || !SB.me) return;
+    this.busy = true; clearTimeout(this.timer);
+    try{
+      let it;
+      while(SB.me && (it = this.items.find(x => x.provider_id === SB.me.provider_id))){
+        let ok = false; try{ ok = await this.send(it); }catch(e){ ok = false; }
+        if(!ok){ it.tries = (it.tries || 0) + 1; this.save(); break; }
+        this.items = this.items.filter(x => x !== it); this.save();
+      }
+    } finally { this.busy = false; }
+    if(this.items.some(x => SB.me && x.provider_id === SB.me.provider_id)) this.timer = setTimeout(() => this.flush(), 30000);
+  }
+};
+window.addEventListener('online', () => GQ.flush());
+// the Floor's tags: today's checks for one site, refreshed at most every 30 seconds
+const GEOV = {
+  cache: {}, busy: {},
+  get(siteId, date){
+    const k = siteId + '|' + date, c = this.cache[k];
+    if((!c || Date.now() - c.at > 30000) && !this.busy[k] && SB.client){ this.busy[k] = true; this.load(siteId, date, k); }
+    return c ? c.by : null;
+  },
+  async load(siteId, date, k){
+    try{
+      const r = await SB.client.from('clockin_locations').select('provider_id,kind,status,distance_m,accuracy_m').eq('site_id', siteId).eq('work_date', date);
+      const old = this.cache[k], by = {};
+      (r.error ? [] : (r.data || [])).forEach(x => { (by[x.provider_id] = by[x.provider_id] || {})[x.kind] = x; });
+      this.cache[k] = { at: Date.now(), by: r.error && old ? old.by : by, err: !!r.error };
+      if(!old || JSON.stringify(old.by) !== JSON.stringify(this.cache[k].by)) render();
+    }catch(e){} finally { this.busy[k] = false; }
+  }
+};
+// the report: checks in a date range (and site), refreshed at most every 60 seconds
+const GEOR = {
+  cache: {}, busy: {}, last: null,
+  get(from, to, site){
+    const k = from + '|' + to + '|' + (site || 'all'), c = this.cache[k];
+    if((!c || Date.now() - c.at > 60000) && !this.busy[k] && SB.client){
+      this.busy[k] = true;
+      let q = SB.client.from('clockin_locations').select('shift_id,kind,site_id,provider_id,work_date,status,distance_m,accuracy_m,captured_at').gte('work_date', from).lte('work_date', to).order('work_date').limit(5000);
+      if(site) q = q.eq('site_id', site);
+      q.then(r => {
+        this.busy[k] = false; const old = this.cache[k];
+        this.cache[k] = { at: Date.now(), rows: r.error ? (old ? old.rows : []) : (r.data || []), err: !!r.error && !old };
+        if(!old || JSON.stringify(old.rows) !== JSON.stringify(this.cache[k].rows) || old.err !== this.cache[k].err) render();
+      }, () => { this.busy[k] = false; });
+    }
+    return c || null;
+  }
+};
+// each site's saved point (HR sets it on Roster › Sites)
+const GEOS = {
+  rows: null, busy: false, err: false, edit: null,
+  get(){
+    if(!this.rows && !this.busy && SB.client){
+      this.busy = true;
+      SB.client.from('sites').select('id,geo_lat,geo_lng,geo_radius_m').then(r => {
+        this.busy = false;
+        if(r.error){ this.err = true; } else { this.err = false; this.rows = {}; (r.data || []).forEach(x => { this.rows[x.id] = x; }); }
+        render();
+      }, () => { this.busy = false; this.err = true; render(); });
+    }
+    return this.rows;
+  }
+};
+function geoDist(m){ return m == null ? '' : m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km'; }
+function geoText(x){
+  if(!x) return '–';
+  if(x.status === 'at_site') return t('geoAt') + (x.distance_m != null ? ' (' + geoDist(x.distance_m) + ')' : '');
+  if(x.status === 'away') return t('geoAway', {dist: geoDist(x.distance_m)}) + (x.accuracy_m ? ' (' + t('geoAcc', {m: x.accuracy_m}) + ')' : '');
+  if(x.status === 'denied') return t('geoDenied');
+  if(x.status === 'no_site') return t('geoNoSite');
+  return t('geoNoLoc');
+}
+function geoTag(sh){
+  if(BACKEND !== 'supabase' || !sh || ui.role === 'provider' || !sh.clockInAt) return '';
+  const by = GEOV.get(sh.siteId, sh.date); if(!by) return '';
+  const x = (by[sh.providerId] || {}).in;
+  if(!x) return sh.clockInAt > GEO_SINCE && Date.now() - sh.clockInAt > 5 * 60000 ? `<span class="pill pill-off geo-pill">${esc(t('geoMissing'))}</span>` : '';
+  if(x.status === 'no_site') return '';
+  const cls = x.status === 'at_site' ? 'pill-serving' : x.status === 'away' ? 'pill-offer' : 'pill-off';
+  const txt = x.status === 'at_site' ? t('geoAt') : x.status === 'away' ? t('geoAway', {dist: geoDist(x.distance_m)}) : x.status === 'denied' ? t('geoDenied') : t('geoNoLoc');
+  return `<span class="pill ${cls} geo-pill">${esc(txt)}</span>`;
+}
+function geoReport(mode, R){
+  if(BACKEND !== 'supabase' || !R || R.loading) return '';
+  const g = ui.geoRep = ui.geoRep || { only: false };
+  const site = mode === 'hr' ? (R.r.siteId === 'all' ? null : R.r.siteId) : ui.siteId;
+  const c = GEOR.get(R.from, R.to, site);
+  let inner;
+  if(!c) inner = `<p class="empty">${esc(t('geoLoading'))}</p>`;
+  else if(c.err) inner = `<p class="empty">${esc(t('geoErr'))}</p>`;
+  else {
+    const mine = c.rows.filter(x => !R.f.providerId || x.provider_id === R.f.providerId);
+    const by = {};
+    mine.forEach(x => { const s = by[x.shift_id] = by[x.shift_id] || { date: x.work_date, siteId: x.site_id, providerId: x.provider_id }; s[x.kind] = x; });
+    const bad = s => ['in', 'out'].some(k => s[k] && s[k].status !== 'at_site' && s[k].status !== 'no_site');
+    let list = Object.values(by).map(s => Object.assign(s, { name: (provider(s.providerId) || {}).name || s.providerId }))
+      .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : a.name.localeCompare(b.name));
+    if(g.only) list = list.filter(bad);
+    GEOR.last = { list, from: R.from, to: R.to, site };
+    const n = st => mine.filter(x => st.indexOf(x.status) >= 0).length;
+    const kp = `<div class="counts"><div class="count"><b class="num">${mine.length}</b><span>${esc(t('geoKChecks'))}</span></div>
+      <div class="count"><b class="num">${n(['at_site'])}</b><span>${esc(t('geoKAt'))}</span></div>
+      <div class="count${n(['away']) ? ' hot' : ''}"><b class="num">${n(['away'])}</b><span>${esc(t('geoKAway'))}</span></div>
+      <div class="count"><b class="num">${n(['denied', 'unavailable', 'timeout'])}</b><span>${esc(t('geoKNone'))}</span></div></div>`;
+    const showSite = !site;
+    const table = list.length ? `<p class="scroll-hint">${esc(t('scrollHint'))}</p><div class="scroll" tabindex="0" role="region" aria-label="${esc(t('geoTitle'))}"><table class="tbl"><thead><tr><th scope="col">${esc(t('geoColDate'))}</th>${showSite ? `<th scope="col">${esc(t('geoColSite'))}</th>` : ''}<th scope="col">${esc(t('geoColProv'))}</th><th scope="col">${esc(t('geoColIn'))}</th><th scope="col">${esc(t('geoColOut'))}</th></tr></thead><tbody>${list.map(s => `<tr class="${bad(s) ? 'flag' : ''}"><td class="num">${esc(fmtDay(s.date))}</td>${showSite ? `<td>${esc(siteLabel(s.siteId))}</td>` : ''}<td>${esc(s.name)}</td><td>${esc(geoText(s.in))}</td><td>${esc(geoText(s.out))}</td></tr>`).join('')}</tbody></table></div>` : `<p class="empty">${esc(t('geoNone'))}</p>`;
+    inner = `${kp}<div class="row-actions"><button class="btn btn-sm btn-line" data-act="geoOnly" aria-pressed="${g.only}">${esc(t(g.only ? 'geoAllRows' : 'geoOnly'))}</button></div>${table}
+      <div class="dl"><button class="btn btn-sm primary" data-act="geoDl" ${list.length ? '' : 'disabled'}>${esc(t('geoDl'))}</button></div>`;
+  }
+  return `<section class="panel" id="geo-rep"><h2>${esc(t('geoTitle'))}</h2><p class="muted" style="font-size:15px">${esc(t('geoSub'))}</p>${inner}</section>`;
+}
+function geoSitesPanel(){
+  if(BACKEND !== 'supabase') return '';
+  const G = GEOS.get(), ed = GEOS.edit;
+  const head = `<h2>${esc(t('geoSiteTitle'))}</h2><p class="muted" style="font-size:15px">${esc(t('geoSiteHelp'))}</p>`;
+  if(!G) return `<section class="panel">${head}<p class="muted">${esc(GEOS.err ? t('geoSiteErr') : t('rLoading'))}</p></section>`;
+  const sites = (state.roster.sites || []).slice().sort((a, b) => a.name.localeCompare(b.name, undefined, {sensitivity: 'base'}));
+  const rows = sites.map(s => {
+    const g = G[s.id] || {}, set = g.geo_lat != null;
+    if(ed && ed.id === s.id){
+      const radii = [75, 150, 250, 400, 800];
+      return `<div class="geo-form"><h3 style="margin:0">${esc(s.name)}</h3>
+        <div class="field"><label for="geo-pt">${esc(t('geoPoint'))}</label><input id="geo-pt" value="${esc(ed.pt || '')}" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="33.37210, -111.96350"></div>
+        <div class="field"><label for="geo-r">${esc(t('geoRadius'))}</label><select id="geo-r">${radii.map(r => `<option value="${r}" ${Number(ed.r) === r ? 'selected' : ''}>${r} m</option>`).join('')}</select></div>
+        ${ed.msg ? `<p class="${ed.bad ? 'sb-msg' : 'note'}" role="status" style="text-align:left">${esc(ed.msg)}</p>` : ''}
+        <div class="row-actions"><button class="btn btn-sm btn-line" data-act="geoHere" ${ed.busy ? 'disabled' : ''}>${esc(t(ed.busy ? 'geoHereBusy' : 'geoHere'))}</button><button class="btn btn-sm primary" data-act="geoSave" ${ed.busy ? 'disabled' : ''}>${esc(t('roSave'))}</button>${set ? `<button class="btn btn-sm btn-quiet" data-act="geoClear">${esc(t('geoClear'))}</button>` : ''}<button class="btn btn-sm btn-quiet" data-act="geoCancel">${esc(t('roCancel'))}</button></div></div>`;
+    }
+    return `<div class="geo-site"><div><b>${esc(s.name)}</b><br><span class="muted" style="font-size:15px">${esc(set ? t('geoSiteSet', {r: g.geo_radius_m || 150}) : t('geoSiteNotSet'))}</span></div><button class="btn btn-sm btn-line" data-act="geoEdit" data-id="${esc(s.id)}" aria-label="${esc(t('roEdit') + ': ' + s.name)}">${esc(t('roEdit'))}</button></div>`;
+  }).join('');
+  return `<section class="panel">${head}${rows}</section>`;
+}
+async function geoAct(act, d){
+  const ed = GEOS.edit, siteName = id => ((state.roster.sites || []).find(x => x.id === id) || {}).name || id;
+  if(act === 'geoEdit'){ const g = (GEOS.rows || {})[d.id] || {}; GEOS.edit = { id: d.id, pt: g.geo_lat != null ? Number(g.geo_lat).toFixed(6) + ', ' + Number(g.geo_lng).toFixed(6) : '', r: g.geo_radius_m || 150, msg: null }; render(); return; }
+  if(act === 'geoCancel'){ GEOS.edit = null; render(); return; }
+  if(act === 'geoHere' && ed){
+    ed.busy = true; ed.msg = null; render();
+    const v = await GEO.read(); ed.busy = false;
+    if(v.lat != null){ ed.pt = v.lat.toFixed(6) + ', ' + v.lng.toFixed(6); ed.msg = t('geoHereGot', {m: v.acc}); ed.bad = false; }
+    else { ed.msg = t('geoHereFail'); ed.bad = true; }
+    render(); return;
+  }
+  if(act === 'geoSave' && ed){
+    const m = /^\s*(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/.exec(String(ed.pt || ''));
+    const lat = m ? Number(m[1]) : NaN, lng = m ? Number(m[2]) : NaN, r = Number(ed.r) || 150;
+    if(!m || !(Math.abs(lat) <= 90) || !(Math.abs(lng) <= 180)){ ed.msg = t('geoBad'); ed.bad = true; render(); return; }
+    const res = await SB.client.from('sites').update({ geo_lat: lat, geo_lng: lng, geo_radius_m: r }).eq('id', ed.id).select('id');
+    if(res.error || !(res.data || []).length){ ed.msg = t('geoSaveFail'); ed.bad = true; render(); return; }
+    GEOS.rows[ed.id] = { id: ed.id, geo_lat: lat, geo_lng: lng, geo_radius_m: r }; GEOS.edit = null; toast(t('geoSaved', {name: siteName(ed.id)})); render(); return;
+  }
+  if(act === 'geoClear' && ed){
+    const res = await SB.client.from('sites').update({ geo_lat: null, geo_lng: null }).eq('id', ed.id).select('id');
+    if(res.error || !(res.data || []).length){ ed.msg = t('geoSaveFail'); ed.bad = true; render(); return; }
+    GEOS.rows[ed.id] = Object.assign({}, GEOS.rows[ed.id], { geo_lat: null, geo_lng: null }); GEOS.edit = null; toast(t('geoCleared', {name: siteName(ed.id)})); render(); return;
+  }
+  if(act === 'geoOnly'){ const g = ui.geoRep = ui.geoRep || { only: false }; g.only = !g.only; render(); return; }
+  if(act === 'geoDl'){
+    const L = GEOR.last; if(!L || !L.list.length) return;
+    const word = x => !x ? '' : {at_site: 'at site', away: 'away', denied: 'not shared', no_site: 'site location not set', timeout: 'no location', unavailable: 'no location'}[x.status] || x.status;
+    const rows = [];
+    L.list.forEach(s => ['in', 'out'].forEach(k => { const x = s[k]; if(!x) return;
+      rows.push({ date: s.date, site: siteLabel(s.siteId), provider_id: s.providerId, provider: s.name, check: k === 'in' ? 'clock in' : 'sign off', result: word(x),
+        distance_m: x.distance_m == null ? '' : x.distance_m, accuracy_m: x.accuracy_m == null ? '' : x.accuracy_m, time: x.captured_at ? hhmm(Date.parse(x.captured_at)) : '' }); }));
+    const csv = E.toCsv([['date','Date'],['site','Site'],['provider_id','Provider ID'],['provider','Provider'],['check','Check'],['result','Result'],['distance_m','Distance from site (m)'],['accuracy_m','Phone accuracy (m)'],['time','Time']].map(([key, label]) => ({key, label})), rows);
+    await saveFile(`locations_${slug(L.site ? siteLabel(L.site) : 'all-sites')}_${L.from}_to_${L.to}.csv`, csv, {what: 'locations', format: 'csv', rows: rows.length, from: L.from, to: L.to, siteId: L.site || 'all'});
+  }
+}
+
 // T-31: short-lived signed links for HR / coordinator viewing (10 minutes); never stored
 const PV = {
   cache: {}, want: new Set(), pending: false,
