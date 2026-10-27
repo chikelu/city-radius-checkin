@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-TDEMQH/UvGaL7Y0RO3K9qRzHMX+OD2GsCCvTmk9uruA=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-A0tjoVhXam9ztmHpIxFO5mz5Uvvd04OmLNh3bHFpW+4=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -2914,10 +2914,10 @@ en:{
   clockIn:'Clock in',
   offHelp:'Clock in when you get here. Your time with a member starts when you tap Accept.',
   geoNote:'Your location is checked once when you clock in and once when you sign off, to confirm you are at the site. It is kept for 90 days.',
-  geoAt:'At site', geoAway:'Away · {dist}', geoDenied:'Location not shared', geoNoLoc:'No location', geoMissing:'Location not received', geoNoSite:'Site location not set', geoAcc:'±{m} m',
+  geoAt:'At site', geoAway:'Away · {dist}', geoRough:'Location too rough', geoRoughLong:'Location too rough (±{m} m)', geoDenied:'Location not shared', geoNoLoc:'No location', geoMissing:'Location not received', geoNoSite:'Site location not set', geoAcc:'±{m} m',
   geoTitle:'Location checks', geoSub:'Where each provider was when they clocked in and signed off, compared with the site. Kept 90 days, then deleted. Phone GPS inside a building can be off by 30–100 m, so treat “Away” as a reason to ask, not as proof.',
   geoColDate:'Date', geoColSite:'Site', geoColProv:'Provider', geoColIn:'Clock in', geoColOut:'Sign off',
-  geoKChecks:'Checks', geoKAt:'At site', geoKAway:'Away', geoKNone:'Not shared or no location', geoOnly:'Show only problems', geoAllRows:'Show all',
+  geoKChecks:'Checks', geoKAt:'At site', geoKAway:'Away', geoKNone:'Not shared, no location or too rough', geoOnly:'Show only problems', geoAllRows:'Show all',
   geoDl:'Download location checks (CSV)', geoNone:'No location checks for these dates.', geoLoading:'Loading location checks…', geoErr:'Location checks are not available yet.',
   geoSiteTitle:'Location check for each site', geoSiteHelp:'Set each site’s point once. Easiest: stand inside the building and tap “Use this device’s location”. Or, in Google Maps, right-click the building and copy the two numbers it shows.',
   geoSiteNotSet:'Not set: clock-ins here are not checked', geoSiteSet:'Set · counts as at site within {r} m', geoPoint:'Map point (latitude, longitude)', geoRadius:'Counts as at site within',
@@ -6364,10 +6364,13 @@ const GEOS = {
     return this.rows;
   }
 };
+const GEO_ROUGH_M = 500;   // a reading less accurate than this cannot tell at site from away
+const geoRough = x => !!x && x.status === 'away' && (x.accuracy_m || 0) > GEO_ROUGH_M;
 function geoDist(m){ return m == null ? '' : m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km'; }
 function geoText(x){
   if(!x) return '–';
   if(x.status === 'at_site') return t('geoAt') + (x.distance_m != null ? ' (' + geoDist(x.distance_m) + ')' : '');
+  if(geoRough(x)) return t('geoRoughLong', {m: x.accuracy_m});
   if(x.status === 'away') return t('geoAway', {dist: geoDist(x.distance_m)}) + (x.accuracy_m ? ' (' + t('geoAcc', {m: x.accuracy_m}) + ')' : '');
   if(x.status === 'denied') return t('geoDenied');
   if(x.status === 'no_site') return t('geoNoSite');
@@ -6379,8 +6382,9 @@ function geoTag(sh){
   const x = (by[sh.providerId] || {}).in;
   if(!x) return sh.clockInAt > GEO_SINCE && Date.now() - sh.clockInAt > 5 * 60000 ? `<span class="pill pill-off geo-pill">${esc(t('geoMissing'))}</span>` : '';
   if(x.status === 'no_site') return '';
-  const cls = x.status === 'at_site' ? 'pill-serving' : x.status === 'away' ? 'pill-offer' : 'pill-off';
-  const txt = x.status === 'at_site' ? t('geoAt') : x.status === 'away' ? t('geoAway', {dist: geoDist(x.distance_m)}) : x.status === 'denied' ? t('geoDenied') : t('geoNoLoc');
+  const rough = geoRough(x);
+  const cls = x.status === 'at_site' ? 'pill-serving' : x.status === 'away' && !rough ? 'pill-offer' : 'pill-off';
+  const txt = x.status === 'at_site' ? t('geoAt') : rough ? t('geoRough') : x.status === 'away' ? t('geoAway', {dist: geoDist(x.distance_m)}) : x.status === 'denied' ? t('geoDenied') : t('geoNoLoc');
   return `<span class="pill ${cls} geo-pill">${esc(txt)}</span>`;
 }
 function geoReport(mode, R){
@@ -6400,11 +6404,11 @@ function geoReport(mode, R){
       .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : a.name.localeCompare(b.name));
     if(g.only) list = list.filter(bad);
     GEOR.last = { list, from: R.from, to: R.to, site };
-    const n = st => mine.filter(x => st.indexOf(x.status) >= 0).length;
+    const n = st => mine.filter(x => st.indexOf(geoRough(x) ? 'rough' : x.status) >= 0).length;
     const kp = `<div class="counts"><div class="count"><b class="num">${mine.length}</b><span>${esc(t('geoKChecks'))}</span></div>
       <div class="count"><b class="num">${n(['at_site'])}</b><span>${esc(t('geoKAt'))}</span></div>
       <div class="count${n(['away']) ? ' hot' : ''}"><b class="num">${n(['away'])}</b><span>${esc(t('geoKAway'))}</span></div>
-      <div class="count"><b class="num">${n(['denied', 'unavailable', 'timeout'])}</b><span>${esc(t('geoKNone'))}</span></div></div>`;
+      <div class="count"><b class="num">${n(['denied', 'unavailable', 'timeout', 'rough'])}</b><span>${esc(t('geoKNone'))}</span></div></div>`;
     const showSite = !site;
     const table = list.length ? `<p class="scroll-hint">${esc(t('scrollHint'))}</p><div class="scroll" tabindex="0" role="region" aria-label="${esc(t('geoTitle'))}"><table class="tbl"><thead><tr><th scope="col">${esc(t('geoColDate'))}</th>${showSite ? `<th scope="col">${esc(t('geoColSite'))}</th>` : ''}<th scope="col">${esc(t('geoColProv'))}</th><th scope="col">${esc(t('geoColIn'))}</th><th scope="col">${esc(t('geoColOut'))}</th></tr></thead><tbody>${list.map(s => `<tr class="${bad(s) ? 'flag' : ''}"><td class="num">${esc(fmtDay(s.date))}</td>${showSite ? `<td>${esc(siteLabel(s.siteId))}</td>` : ''}<td>${esc(s.name)}</td><td>${esc(geoText(s.in))}</td><td>${esc(geoText(s.out))}</td></tr>`).join('')}</tbody></table></div>` : `<p class="empty">${esc(t('geoNone'))}</p>`;
     inner = `${kp}<div class="row-actions"><button class="btn btn-sm btn-line" data-act="geoOnly" aria-pressed="${g.only}">${esc(t(g.only ? 'geoAllRows' : 'geoOnly'))}</button></div>${table}
@@ -6459,7 +6463,7 @@ async function geoAct(act, d){
   if(act === 'geoOnly'){ const g = ui.geoRep = ui.geoRep || { only: false }; g.only = !g.only; render(); return; }
   if(act === 'geoDl'){
     const L = GEOR.last; if(!L || !L.list.length) return;
-    const word = x => !x ? '' : {at_site: 'at site', away: 'away', denied: 'not shared', no_site: 'site location not set', timeout: 'no location', unavailable: 'no location'}[x.status] || x.status;
+    const word = x => !x ? '' : geoRough(x) ? 'too rough' : {at_site: 'at site', away: 'away', denied: 'not shared', no_site: 'site location not set', timeout: 'no location', unavailable: 'no location'}[x.status] || x.status;
     const rows = [];
     L.list.forEach(s => ['in', 'out'].forEach(k => { const x = s[k]; if(!x) return;
       rows.push({ date: s.date, site: siteLabel(s.siteId), provider_id: s.providerId, provider: s.name, check: k === 'in' ? 'clock in' : 'sign off', result: word(x),
