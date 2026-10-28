@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-A0tjoVhXam9ztmHpIxFO5mz5Uvvd04OmLNh3bHFpW+4=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-Vsh/NmezPbiVOErgZLZHj1kwacEt42Ff9Z6xrByz238=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="City Radius">
+<meta name="theme-color" content="#0A6157">
 </head>
 <body>
 <title>City Radius Provider Check-in</title>
@@ -220,6 +225,7 @@ button.count:hover{border-color:var(--ink)}
 .pill-off{background:var(--sunk);color:var(--muted)}
 .pw-row{display:flex;gap:8px;align-items:stretch}.pw-row input{flex:1 1 auto;min-width:0;width:auto}.eye-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:56px;min-height:56px;padding:0;border-radius:var(--r-sm);border:2px solid var(--ink);background:var(--surface);color:var(--ink);cursor:pointer}.eye-btn svg{width:26px;height:26px}.eye-btn:focus-visible{outline:3px solid var(--focus,#1a5fd0);outline-offset:2px}.sb-pin-row{display:flex;align-items:center;justify-content:center;gap:14px}.sb-dots span.dig{border:0;width:auto;min-width:22px;height:auto;border-radius:0;font-size:24px;font-weight:800;line-height:22px;text-align:center}
 .ph-file-btn{position:relative;cursor:pointer}.ph-file-btn.is-busy{opacity:.7;pointer-events:none}.ph-file{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}.ph-file-btn:focus-within{outline:3px solid var(--focus,#1a5fd0);outline-offset:2px}
+.push-card p{margin:0 0 10px}.push-steps{margin:0 0 10px;padding-left:22px;display:flex;flex-direction:column;gap:6px}.push-on{display:flex;align-items:center;gap:8px;margin:0;color:var(--muted,#555);font-size:16px}.push-on svg{width:20px;height:20px;flex:0 0 auto}.push-on span{flex:1}
 .sb-pin{font-size:22px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
 @media print{body *{visibility:hidden}.sb-pins,.sb-pins *{visibility:visible}.sb-pins{position:absolute;left:0;top:0;width:100%;border:0}.sb-pins .no-print{display:none}.sb-pins .scroll{overflow:visible}.sb-pin-tbl tr{page-break-inside:avoid}}
 .ph-cam{display:flex;flex-direction:column;align-items:center;gap:8px}
@@ -2895,7 +2901,21 @@ en:{
   sbe_PIN_WEAK:'That PIN is too easy to guess.', sbe_PIN_FORMAT:'A PIN is exactly 6 numbers.', sbe_PW_SHORT:'Use at least 10 characters.', sbe_PW_LONG:'Use 72 characters or fewer.',
   sbe_PW_SSN:'Do not use a Social Security number.', sbe_PW_WEAK:'That password is too easy to guess.', sbe_NAME_FORMAT:'Use 3–32 lowercase letters, numbers, dot, dash or underscore, starting with a letter.',
   sbe_NAME_EMAIL:'Use a username, not an email address.', sbe_NAME_DIGITS:'Usernames cannot hold long numbers (like a phone number or SSN).', sbe_NAME_TAKEN:'That username is already used.',
-  sbe_LOGIN_EXISTS:'This person already has a sign-in. Use New PIN instead.', sbe_SELF:'You cannot turn off your own sign-in.', sbe_NOT_ALLOWED:'Only HR can change sign-ins.',
+  sbe_LOGIN_EXISTS:'This person already has a sign-in. Use New PIN instead, or turn off their PIN sign-in first.',
+  pushTitle:'Get an alert for new members', pushLead:'Your phone can show an alert when you are given a member, even when the phone is locked or you are in another app.',
+  pushTurnOn:'Turn on alerts', pushBusy:'Turning on…', pushNotNow:'Not now', pushTurnOff:'Turn off', pushOnLine:'Alerts are on for this phone.',
+  pushOnToast:'Alerts are on. You will get one when you are given a member.', pushOffToast:'Alerts are off for this phone.',
+  pushFail:'Could not turn on alerts. Check your internet and try again.',
+  pushDenied:'Alerts are blocked for this app. To get them, allow notifications for this site in your phone settings.',
+  pushIosLead:'On iPhone, alerts work after you add this app to your Home Screen:', pushIos1:'Tap the Share button (the square with an arrow).',
+  pushIos2:'Tap “Add to Home Screen”, then “Add”.', pushIos3:'Open City Radius from your Home Screen, sign in, and tap “Turn on alerts”.',
+  sbRoleSu:'Super user', sbRoleSuLong:'Super user (HR, coordinator and provider)', sbRolePrimary:'Primary coordinator', sbRoleAsst:'Assistant coordinator',
+  sbAllSites:'All sites', sbChange:'Change', sbEditTitle:'Change {name}', sbSaveLogin:'Save', sbFType:'Coordinator type', sbFProv:'Their provider record (optional)',
+  sbFProvNone:'None (does not clock in)', sbSuHelp:'A super user can work as HR, as the coordinator of any site, and clock in as their own provider. Give this only to people who run the program.',
+  sbCoordHelp:'Each site has one primary coordinator and any number of assistants. Choosing a new primary makes the old one an assistant.',
+  suWorking:'Working as: {role}', suAsHr:'HR', suAsCoord:'Coordinator · {site}', suAsProv:'Provider (my own day)', suTitle:'Work as', suNow:'You are working as this now',
+  suNote:'You can switch at any time. Your own clock-ins and visits are recorded under your name; everything else you do is recorded as HR.', suHrSub:'Roster, payroll, reports, activity log',
+  suCoordSub:'Floor, end of day, timesheets for this site', suProvSub:'Clock in and work with members as {name}', suNoProv:'To clock in yourself, HR links your provider record under Staff logins → Change.', sbe_SELF:'You cannot turn off your own sign-in or take away your own HR access.', sbe_NOT_ALLOWED:'Only HR can change sign-ins.',
   sbe_INACTIVE:'This person is inactive on the roster.', sbe_NOT_FOUND:'Not found. Reload and try again.',
   phTitle:'Clock-in photo', phLead:'Show only your face. Your coordinator uses this photo to see it was you. It is deleted after {days} days.',
   phTake:'Take photo and clock in', phSkip:'Clock in without a photo', phNoCamBtn:'Clock in',
@@ -3334,6 +3354,7 @@ const tm = ms => E.timeLabel(ms);
 
 /* ---------- icons ---------- */
 const I = {
+  bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
   eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
   eyeOff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>',
   camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
@@ -3697,7 +3718,7 @@ function topBar(){
   const right = ui.role && !(ui.role === 'provider' && me()) ? `<button class="chipbtn" data-act="switch">${esc(t('switchUser'))}</button>` : '';
   return `<header class="top"><div class="top-in">
     <div class="brand"><span class="mark">${I.clock}</span>${esc(t('brand'))}</div>
-    ${right}
+    ${'' + (BACKEND === 'supabase' ? SU.chip() : '')}${right}
   </div></header>` + obStrip();
 }
 
@@ -3779,7 +3800,7 @@ function providerView(){
   return `<main class="phone">
     <div class="who"><div><h1>${esc(t('hi',{name:first(p.name)}))}</h1><p>${esc(site?site.name:'')}</p></div></div>
     
-    ${fixCards(p, false)}${notices}${status}${offers}${visits}${day.autoSignedOff ? '' : notesTodo}${todayBox}
+    ${fixCards(p, false)}${notices}${status}${'' + (BACKEND === 'supabase' ? PUSH.box('top') : '')}${offers}${visits}${day.autoSignedOff ? '' : notesTodo}${todayBox}${'' + (BACKEND === 'supabase' ? PUSH.box('bottom') : '')}
     ${day.clockedIn ? `<button class="btn btn-line" data-act="checkoutOpen">${I.door}${esc(t('endDay'))}</button>` : ''}
     <button class="btn btn-line" data-act="myOpen">${I.board}${esc(t('myTime'))}</button>
     <button class="btn btn-quiet change" data-act="switch">${esc(t('notYou',{first:first(p.name)}))}</button>
@@ -5504,6 +5525,7 @@ function sheetBody(sh){
       <button class="btn btn-accent" data-act="cfSave">${esc(t('cfSave'))}</button>
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
   }
+  if(sh.kind === 'suRole') return SU.sheet();
   if(sh.kind === 'pickMember'){
     const p = provider(sh.providerId);
     const b = E.board(eff(), ui.siteId, date, now);
@@ -5533,10 +5555,11 @@ document.addEventListener('click', async ev => {
     case 'fixReason': ui.fix.reason = d.reason; render(); break;
     case 'fixAttest': ui.fix.attest = !ui.fix.attest; render(); break;
     case 'fixSend': {
-      const shf = shiftById(ui.fix.shiftId); if(!shf) break;
-      const endAt = ui.fix.mode === 'other' ? toMs(shf.date, ui.fix.time) : ui.fix.suggestAt;
-      const r = await act({type:'submitCorrection', providerId:shf.providerId, date:shf.date, endAt, reason:ui.fix.reason, attestation:t('fAttest')}, {silent:true});
-      if(r.ok){ if(ui.drafts) delete ui.drafts[ui.fix.shiftId]; ui.fix = null; render(); window.scrollTo(0,0); toast(t('fSentToast')); }
+      const fx = ui.fix, shf = fx && shiftById(fx.shiftId); if(!shf) break;
+      const endAt = fx.mode === 'other' ? toMs(shf.date, fx.time) : fx.suggestAt;
+      const r = await act({type:'submitCorrection', providerId:shf.providerId, date:shf.date, endAt, reason:fx.reason, attestation:t('fAttest')}, {silent:true});
+      // the screen may already have closed the form while this was sending (the day is no longer auto signed off)
+      if(r.ok){ if(ui.drafts) delete ui.drafts[fx.shiftId]; ui.fix = null; render(); window.scrollTo(0,0); toast(t('fSentToast')); }
       else toast(t('err_'+r.code,{cut:tm(shf.autoSignedOffAt)}) || t('err_generic'), true);
       break;
     }
@@ -5618,6 +5641,11 @@ document.addEventListener('click', async ev => {
     case 'switch': ui.mytime = false; ui.view = 'board'; ui.rep = null; ui.fix = null; ui.checkout = false; ui.role = null; ui.meId = null; ui.sheet = null; LS.set('role', null); LS.set('me', null); render(); break;
     
     case 'speak': speak(d.text); break;
+    case 'pushOn': await PUSH.on(); break;
+    case 'pushOff': await PUSH.off(); break;
+    case 'pushNotNow': PUSH.notNow(); break;
+    case 'suOpen': ui.sheet = {kind:'suRole', _fresh:true}; render(); break;
+    case 'suPick': SU.pick(d.r, d.site || null); break;
     case 'geoEdit': case 'geoHere': case 'geoSave': case 'geoClear': case 'geoCancel': case 'geoOnly': case 'geoDl': await geoAct(d.act, d); break;
     case 'clockIn': {
       if(BACKEND === 'supabase') GEO.start();
@@ -5803,7 +5831,7 @@ async function leaveDo(method){
 const T13 = {
   missed: [], at: 0, busy: false,
   async load(){
-    if(T13.busy || !SB.client || !SB.me || SB.me.role !== 'hr' || Date.now() - T13.at < 5 * 60000) return;
+    if(T13.busy || !SB.client || !SB.me || ['hr','admin'].indexOf(SB.me.role) < 0 || Date.now() - T13.at < 5 * 60000) return;
     T13.busy = true; T13.at = Date.now();
     try{ const r = await SB.client.rpc('missed_auto_signoffs'); if(!r.error){ T13.missed = Array.isArray(r.data) ? r.data : []; render(); } }
     catch(e){} finally{ T13.busy = false; }
@@ -5829,7 +5857,7 @@ const T13 = {
   // audit_log.actor (auth user id) -> 'hr' | 'coord:<site>' | provider id; no actor: a server job, or the HR-only admin-users function
   byOf(actor, table, logins){
     if(actor){ const L = (logins || []).find(l => l.user_id === actor); if(!L) return 'unknown';
-      return L.role === 'hr' ? 'hr' : L.role === 'coordinator' ? 'coord:' + (L.site_id || '') : L.provider_id || 'unknown'; }
+      return L.role === 'hr' || L.role === 'admin' ? 'hr' : L.role === 'coordinator' ? 'coord:' + (L.site_id || '') : L.provider_id || 'unknown'; }
     return table === 'app_users' ? 'hr' : 'system';
   },
   day(v){ return v ? String(v).slice(0, 10) : undefined; },
@@ -5855,7 +5883,7 @@ const T13 = {
     return {events: res[0].data || [], downloads: res[1].data || [], audit: res[2].data || [], capped: res.some(r => (r.data || []).length >= L)};
   },
   data(from, to){
-    if(!SB.client || !SB.me || SB.me.role !== 'hr') return {err: true};
+    if(!SB.client || !SB.me || ['hr','admin'].indexOf(SB.me.role) < 0 || ui.role !== 'hr') return {err: true};
     const key = from + '|' + to, c = ACTLOGSB.cache[key];
     if(c && c.rows) return {raw: ACTLOGSB.toRaw(c.rows, SBA.logins), capped: c.rows.capped};
     if(c && c.err) return {err: true};
@@ -6051,6 +6079,7 @@ const SB = {
     if(me.error || !me.data || me.data.active === false) return SB.block('norole');
     SB.me = me.data; setTimeout(() => { try{ PQ.flush(); }catch(e){} try{ GQ.flush(); }catch(e){} }, 1500);
     ui.role = me.data.role; ui.meId = me.data.provider_id || null; if(me.data.site_id) ui.siteId = me.data.site_id;
+    if(me.data.role === 'admin') SU.restore();
     c.auth.onAuthStateChange(ev => { if(ev === 'SIGNED_OUT') SB.block('signin'); });
     SB.blocked = false; SB.why = '';
     return SB.db();
@@ -6257,7 +6286,6 @@ const PQ = {
   }
 };
 window.addEventListener('online', () => PQ.flush());
-
 // T-35: location check at clock-in and sign-off. One reading each time, sent to clockin_locations; the database works out
 // "at site" / "away" from the site's saved point. Kept on the phone until stored (like photos); deleted after 90 days.
 const GEO_SINCE = Date.parse('2026-10-25T19:00:00Z');   // clock-ins before this had no location check
@@ -6472,7 +6500,6 @@ async function geoAct(act, d){
     await saveFile(`locations_${slug(L.site ? siteLabel(L.site) : 'all-sites')}_${L.from}_to_${L.to}.csv`, csv, {what: 'locations', format: 'csv', rows: rows.length, from: L.from, to: L.to, siteId: L.site || 'all'});
   }
 }
-
 // T-31: short-lived signed links for HR / coordinator viewing (10 minutes); never stored
 const PV = {
   cache: {}, want: new Set(), pending: false,
@@ -6540,6 +6567,102 @@ const PV = {
     return SBAUTH.result(await client.auth.signInWithPassword({ email: SBAUTH.email(id.data), password: String(password) }));
   }
 };/*END-SBAUTH*/
+// T-34 lock-screen alerts (Web Push). The phone's own push service; no phone number or email. Prod build only.
+const PUSH = {
+  KEY: 'BPxbOG5_qnH3r6b7TvkwpY3JMA2TGbaA0KCK2zl16m-s5lXdps4zwV1058_JrtVw2Ik7rJoxGONmUa-mX2bfgF8', // VAPID public key (not secret)
+  state: 'unknown', reg: null, sub: null, checkedFor: null,
+  supported(){ return !!(navigator.serviceWorker && window.PushManager && window.Notification); },
+  ios(){ const u = navigator.userAgent || ''; return /iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1); },
+  standalone(){ try{ return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }catch(e){ return false; } },
+  key(){ const s = PUSH.KEY.replace(/-/g, '+').replace(/_/g, '/'), b = atob(s + '='.repeat((4 - s.length % 4) % 4)); return Uint8Array.from(b, c => c.charCodeAt(0)); },
+  b64u(buf){ return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
+  // work out where this phone stands (once per signed-in provider)
+  async check(){
+    const who = SB.me && (SB.me.provider_id || null) + ':' + ui.role;
+    if(PUSH.checkedFor === who) return; PUSH.checkedFor = who;
+    if(!PUSH.supported()){ PUSH.state = PUSH.ios() && !PUSH.standalone() ? 'ios_home' : 'unsupported'; render(); return; }
+    if(Notification.permission === 'denied'){ PUSH.state = 'denied'; render(); return; }
+    try{
+      PUSH.reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      PUSH.sub = await PUSH.reg.pushManager.getSubscription();
+      if(PUSH.sub && Notification.permission === 'granted'){
+        const r = await SB.client.rpc('vh_push_status', { p_endpoint: PUSH.sub.endpoint });
+        PUSH.state = !r.error && r.data === true ? 'on' : 'off';
+      } else PUSH.state = 'off';
+    }catch(e){ PUSH.state = 'unsupported'; }
+    render();
+  },
+  async on(){
+    if(PUSH.state === 'busy') return; const prev = PUSH.state; PUSH.state = 'busy'; render();
+    try{
+      const perm = await Notification.requestPermission();   // must run from the tap
+      if(perm !== 'granted'){ PUSH.state = perm === 'denied' ? 'denied' : prev; render(); return; }
+      PUSH.reg = PUSH.reg || await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      await navigator.serviceWorker.ready;
+      PUSH.sub = (await PUSH.reg.pushManager.getSubscription()) || await PUSH.reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: PUSH.key() });
+      const j = PUSH.sub.toJSON(), r = await SB.client.rpc('vh_push_subscribe', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+      if(r.error) throw r.error;
+      PUSH.state = 'on'; toast(t('pushOnToast'));
+    }catch(e){ PUSH.state = prev === 'busy' ? 'off' : prev; toast(t('pushFail'), true); }
+    render();
+  },
+  async off(quiet){
+    const s = PUSH.sub;
+    try{ if(s && SB.client) await Promise.race([SB.client.rpc('vh_push_unsubscribe', { p_endpoint: s.endpoint }), new Promise(r => setTimeout(r, 3000))]); }catch(e){}
+    try{ if(s) await s.unsubscribe(); }catch(e){}
+    PUSH.sub = null; PUSH.state = 'off'; PUSH.checkedFor = null;
+    if(!quiet){ toast(t('pushOffToast')); render(); }
+  },
+  notNow(){ LS.set('pushNotNow', today()); render(); },
+  box(pos){
+    if(!(ui.role === 'provider' && me() && SB.me && SB.me.provider_id === ui.meId)) return '';
+    if(PUSH.state === 'unknown'){ setTimeout(PUSH.check, 0); return ''; }
+    const st = PUSH.state;
+    if(pos === 'bottom') return st === 'on' ? `<p class="push-on">${I.bell}<span>${esc(t('pushOnLine'))}</span><button class="btn btn-sm btn-quiet" data-act="pushOff">${esc(t('pushTurnOff'))}</button></p>` : '';
+    if(st === 'on' || st === 'unsupported' || LS.get('pushNotNow', '') === today()) return '';
+    let body;
+    if(st === 'ios_home') body = `<p>${esc(t('pushIosLead'))}</p><ol class="push-steps"><li>${esc(t('pushIos1'))}</li><li>${esc(t('pushIos2'))}</li><li>${esc(t('pushIos3'))}</li></ol>`;
+    else if(st === 'denied') body = `<p>${esc(t('pushDenied'))}</p>`;
+    else body = `<p>${esc(t('pushLead'))}</p><button class="btn btn-go" data-act="pushOn"${st === 'busy' ? ' disabled' : ''}>${I.bell}${esc(t(st === 'busy' ? 'pushBusy' : 'pushTurnOn'))}</button>`;
+    return `<section class="panel push-card" aria-labelledby="push-h"><h2 id="push-h">${esc(t('pushTitle'))}</h2>${body}<button class="btn btn-quiet" data-act="pushNotNow">${esc(t('pushNotNow'))}</button></section>`;
+  }
+};
+// T-33 super user ('admin'): one login that works as HR, as a coordinator at any site, or as their own provider.
+const SU = {
+  is(){ return !!(SB.me && SB.me.role === 'admin'); },
+  label(){
+    if(ui.role === 'coordinator') return t('suAsCoord', {site: siteLabel(ui.siteId)});
+    if(ui.role === 'provider') return t('suAsProv');
+    return t('suAsHr');
+  },
+  chip(){ return SU.is() ? `<button class="chipbtn su-chip" data-act="suOpen" aria-haspopup="dialog">${esc(t('suWorking', {role: SU.label()}))}</button>` : ''; },
+  sheet(){
+    const sites = (state.roster.sites || []).filter(x => x.active !== false);
+    const opt = (r, site, label, sub) => { const cur = ui.role === r && (r !== 'coordinator' || ui.siteId === site);
+      return `<button class="opt" data-act="suPick" data-r="${esc(r)}"${site ? ` data-site="${esc(site)}"` : ''}${cur ? ' aria-current="true"' : ''}><span class="grow">${esc(label)}<small>${esc(cur ? t('suNow') : sub)}</small></span></button>`; };
+    return `<h2 id="sheet-h">${esc(t('suTitle'))}</h2><p class="note">${esc(t('suNote'))}</p>
+      ${opt('hr', null, t('suAsHr'), t('suHrSub'))}
+      ${sites.map(x => opt('coordinator', x.id, t('suAsCoord', {site: x.name}), t('suCoordSub'))).join('')}
+      ${SB.me && SB.me.provider_id ? opt('provider', null, t('suAsProv'), t('suProvSub', {name: (provider(SB.me.provider_id) || {}).name || ''})) : `<p class="muted">${esc(t('suNoProv'))}</p>`}
+      <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
+  },
+  pick(r, site){
+    if(!SU.is() || ['hr', 'coordinator', 'provider'].indexOf(r) < 0) return;
+    if(r === 'provider' && !SB.me.provider_id) return;
+    ui.sheet = null; ui.mytime = false; ui.rep = null; ui.fix = null; ui.checkout = false;
+    ui.role = r; ui.view = r === 'hr' ? 'reports' : 'board'; ui.meId = SB.me.provider_id || null;
+    if(r === 'coordinator' && site) ui.siteId = site;
+    LS.set('suRole', { role: r, site: ui.siteId || null });
+    render(); window.scrollTo(0, 0);
+  },
+  restore(){
+    const v = LS.get('suRole', null) || {};
+    let r = ['hr', 'coordinator', 'provider'].indexOf(v.role) >= 0 ? v.role : 'hr';
+    if(r === 'provider' && !SB.me.provider_id) r = 'hr';
+    ui.role = r; ui.meId = SB.me.provider_id || null; ui.view = r === 'hr' ? 'reports' : 'board';
+    if(r === 'coordinator' && v.site) ui.siteId = v.site;
+  }
+};
 const SBA = {
   mode: 'start', names: null, namesErr: false, q: '', pick: null, pin: '', msg: '', info: false, busy: false, user: '',
   last: Date.now(), warn: false, out: false,
@@ -6548,7 +6671,7 @@ const SBA = {
   lock(){ const v = LS.get('signinLock', null); return v && typeof v === 'object' ? v : { fails: 0, until: 0 }; },
   lockedMs(){ return SBAUTH.lockedFor(SBA.lock(), Date.now()); },
   // signed in, but the screen is not ready (roster still loading, or the provider is not on the active roster)
-  hold(){ if(SB.blocked || !SB.me) return false; if(!SB.roster || state.roster === START_ROSTER) return true; return SB.me.role === 'provider' && !me(); },
+  hold(){ if(SB.blocked || !SB.me) return false; if(!SB.roster || state.roster === START_ROSTER) return true; return (SB.me.role === 'provider' || (SB.me.role === 'admin' && ui.role === 'provider')) && !me(); },
   head(){ return `<header class="top"><div class="top-in"><div class="brand"><span class="mark">${I.clock}</span>${esc(t('brand'))}</div></div></header>`; },
   outBtn(){ return `<button class="btn btn-line" data-sb="out" data-sbk="out">${esc(t('sbSignOut'))}</button>`; },
   msgHtml(){ return `<p class="sb-msg${SBA.info ? ' sb-info' : ''}" role="alert">${esc(SBA.msg)}</p>`; },
@@ -6659,6 +6782,7 @@ const SBA = {
     if(SBA.out) return; SBA.out = true; SBA.hideWarn();
     // send anything this person still has queued (offline actions) before the session ends
     try{ if(db && outbox.items.length && navigator.onLine !== false) await Promise.race([obFlush(), new Promise(r => setTimeout(r, 3000))]); }catch(e){}
+    try{ if(PUSH.sub || PUSH.state === 'on') await PUSH.off(true); }catch(e){} // a shared phone must not keep alerting for the last person
     try{ if(SB.client) await Promise.race([SB.client.auth.signOut({ scope: 'local' }), new Promise(r => setTimeout(r, 3000))]); }catch(e){}
     try{ const k = SBA.authKey(); if(k) localStorage.removeItem(k); }catch(e){} // gone even when offline
     LS.set('role', null); LS.set('me', null);
@@ -6675,7 +6799,7 @@ const SBA = {
   },
   // ---- inactivity ----
   // the warning stays up until the tap is over, so the tap cannot land on the screen underneath it
-  bump(){ SBA.last = Date.now(); if(SBA.warn){ clearTimeout(SBA.warnT); SBA.warnT = setTimeout(() => { if(SBAUTH.idleStep(SB.me ? SB.me.role : 'provider', SBA.last, Date.now(), SBA.lim()).state === 'ok') SBA.hideWarn(); }, 400); } },
+  bump(){ SBA.last = Date.now(); if(SBA.warn){ clearTimeout(SBA.warnT); SBA.warnT = setTimeout(() => { if(SBAUTH.idleStep(SB.me ? (SB.me.role === 'admin' ? 'hr' : SB.me.role) : 'provider', SBA.last, Date.now(), SBA.lim()).state === 'ok') SBA.hideWarn(); }, 400); } },
   tick(){
     const now = Date.now(), o = SBA.lim();
     if(SB.blocked || !SB.me){
@@ -6686,7 +6810,7 @@ const SBA = {
     if(SBA.out) return;
     if(SBA.ro.shown && now - SBA.ro.shown.at > 5 * 60000){ SBA.ro.shown = null; render(); }
     if(SBA.bulk.pins && !SBA.bulk.running && now - SBA.bulk.at > 15 * 60000){ SBA.bulk.pins = null; render(); }
-    const st = SBAUTH.idleStep(SB.me.role, SBA.last, now, o);
+    const st = SBAUTH.idleStep(SB.me.role === 'admin' ? 'hr' : SB.me.role, SBA.last, now, o);
     if(st.state === 'out') SBA.signOut('idle');
     else if(st.state === 'warn') SBA.showWarn(st.left);
     else if(SBA.warn) SBA.hideWarn();
@@ -6707,7 +6831,7 @@ const SBA = {
   // ---- HR: sign-ins on the Roster screen ----
   async loadLogins(){
     try{
-      const r = await SB.client.from('app_users').select('user_id, role, site_id, provider_id, active, login_name');
+      const r = await SB.client.from('app_users').select('user_id, role, site_id, provider_id, active, login_name, is_primary');
       if(r.error) throw r.error;
       SBA.logins = r.data || []; SBA.loginsErr = false;
     }catch(e){ SBA.loginsErr = true; }
@@ -6734,17 +6858,21 @@ const SBA = {
   staffBox(){
     const staff = (SBA.logins || []).filter(l => l.role !== 'provider').sort((a, b) => String(a.login_name).localeCompare(String(b.login_name)));
     const F = SBA.ro.form, dis = SBA.ro.busy ? ' disabled' : '', siteName = id => ((state.roster.sites || []).find(x => x.id === id) || {}).name || id || '–';
-    const rows = staff.map(L => `<tr class="${L.active ? '' : 'ro-off'}"><th scope="row">${esc(L.login_name)}</th><td>${esc(t(L.role === 'hr' ? 'sbRoleHr' : 'sbRoleCoord'))}</td><td>${esc(L.role === 'hr' ? '–' : siteName(L.site_id))}</td>
+    const roleText = L => L.role === 'admin' ? t('sbRoleSu') + (L.provider_id ? ' · ' + ((provider(L.provider_id) || {}).name || '') : '') : L.role === 'hr' ? t('sbRoleHr') : t(L.is_primary ? 'sbRolePrimary' : 'sbRoleAsst');
+    const rows = staff.map(L => `<tr class="${L.active ? '' : 'ro-off'}"><th scope="row">${esc(L.login_name)}</th><td>${esc(roleText(L))}</td><td>${esc(L.role === 'coordinator' ? siteName(L.site_id) : t('sbAllSites'))}</td>
       <td><span class="pill${L.active ? ' pill-serving' : ''}">${esc(t(L.active ? 'sbOn' : 'sbOff'))}</span></td>
-      <td><div class="sb-cell">${L.active ? `<button class="btn btn-sm btn-line" data-sb="roReset" data-id="${esc(L.user_id)}" aria-label="${esc(t('sbResetPw') + ': ' + L.login_name)}"${dis}>${esc(t('sbResetPw'))}</button>` : ''}
+      <td><div class="sb-cell"><button class="btn btn-sm btn-line" data-sb="staffEdit" data-id="${esc(L.user_id)}" aria-label="${esc(t('sbChange') + ': ' + L.login_name)}"${dis}>${esc(t('sbChange'))}</button>${L.active ? `<button class="btn btn-sm btn-line" data-sb="roReset" data-id="${esc(L.user_id)}" aria-label="${esc(t('sbResetPw') + ': ' + L.login_name)}"${dis}>${esc(t('sbResetPw'))}</button>` : ''}
       <button class="btn btn-sm btn-quiet" data-sb="roActive" data-id="${esc(L.user_id)}" data-on="${L.active ? '0' : '1'}" aria-label="${esc(t(L.active ? 'sbTurnOff' : 'sbTurnOn') + ': ' + L.login_name)}"${dis}>${esc(t(L.active ? 'sbTurnOff' : 'sbTurnOn'))}</button></div></td></tr>`).join('');
     const form = F ? `<form class="sb-staff-form" data-sbform="staffAdd" novalidate>
-        <div class="field"><label for="sb-nu">${esc(t('sbFUser'))}</label><input id="sb-nu" value="${esc(F.loginName)}" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="sb-nu-help"></div>
-        <div class="field"><label for="sb-nr">${esc(t('sbFRole'))}</label><select id="sb-nr"><option value="coordinator"${F.role === 'coordinator' ? ' selected' : ''}>${esc(t('sbRoleCoord'))}</option><option value="hr"${F.role === 'hr' ? ' selected' : ''}>${esc(t('sbRoleHr'))}</option></select></div>
-        <div class="field"><label for="sb-ns">${esc(t('sbFSite'))}</label><select id="sb-ns"${F.role === 'hr' ? ' disabled' : ''}>${(state.roster.sites || []).filter(s => s.active !== false).map(s => `<option value="${esc(s.id)}"${F.siteId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>
-        <p id="sb-nu-help" class="muted" style="font-size:15px;grid-column:1/-1">${esc(t('sbFUserHelp'))}</p>
+        <h3 style="grid-column:1/-1;margin:0">${esc(F.editId ? t('sbEditTitle', {name: F.loginName}) : t('sbAddStaff'))}</h3>
+        ${F.editId ? '' : `<div class="field"><label for="sb-nu">${esc(t('sbFUser'))}</label><input id="sb-nu" value="${esc(F.loginName)}" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="sb-nu-help"></div>`}
+        <div class="field"><label for="sb-nr">${esc(t('sbFRole'))}</label><select id="sb-nr"><option value="coordinator"${F.role === 'coordinator' ? ' selected' : ''}>${esc(t('sbRoleCoord'))}</option><option value="hr"${F.role === 'hr' ? ' selected' : ''}>${esc(t('sbRoleHr'))}</option><option value="admin"${F.role === 'admin' ? ' selected' : ''}>${esc(t('sbRoleSuLong'))}</option></select></div>
+        ${F.role === 'coordinator' ? `<div class="field"><label for="sb-ns">${esc(t('sbFSite'))}</label><select id="sb-ns">${(state.roster.sites || []).filter(s => s.active !== false).map(s => `<option value="${esc(s.id)}"${F.siteId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>
+        <div class="field"><label for="sb-np">${esc(t('sbFType'))}</label><select id="sb-np"><option value="0"${!F.primary ? ' selected' : ''}>${esc(t('sbRoleAsst'))}</option><option value="1"${F.primary ? ' selected' : ''}>${esc(t('sbRolePrimary'))}</option></select></div>` : ''}
+        ${F.role === 'admin' ? `<div class="field"><label for="sb-nv">${esc(t('sbFProv'))}</label><select id="sb-nv"><option value="">${esc(t('sbFProvNone'))}</option>${(state.roster.providers || []).filter(p => p.active !== false && (p.id === F.providerId || !(SBA.logins || []).some(l => l.provider_id === p.id))).sort((a, b) => E.byLastName(a.name, b.name)).map(p => `<option value="${esc(p.id)}"${F.providerId === p.id ? ' selected' : ''}>${esc(E.lastFirst(p.name))}</option>`).join('')}</select></div>` : ''}
+        <p id="sb-nu-help" class="muted" style="font-size:15px;grid-column:1/-1">${esc(F.role === 'admin' ? t('sbSuHelp') : F.role === 'coordinator' ? t('sbCoordHelp') : '')}${F.editId ? '' : ' ' + esc(t('sbFUserHelp'))}</p>
         ${SBA.ro.msg ? `<p class="sb-msg" role="alert" style="grid-column:1/-1;text-align:left">${esc(SBA.ro.msg)}</p>` : ''}
-        <div class="row-actions" style="grid-column:1/-1"><button class="btn btn-sm primary btn-accent" type="submit"${dis}>${esc(t('sbCreateLogin'))}</button><button class="btn btn-sm btn-quiet" type="button" data-sb="staffCancel">${esc(t('sbCancel'))}</button></div>
+        <div class="row-actions" style="grid-column:1/-1"><button class="btn btn-sm primary btn-accent" type="submit"${dis}>${esc(t(F.editId ? 'sbSaveLogin' : 'sbCreateLogin'))}</button><button class="btn btn-sm btn-quiet" type="button" data-sb="staffCancel">${esc(t('sbCancel'))}</button></div>
       </form>` : `<div class="row-actions"><button class="btn btn-sm primary btn-accent" data-sb="staffAdd">${esc(t('sbAddStaff'))}</button></div>`;
     return `<section class="panel" aria-labelledby="sb-staff-h"><h2 id="sb-staff-h">${esc(t('sbStaffTitle'))}</h2><p class="muted">${esc(t('sbStaffHelp'))}</p>
       ${!SBA.logins ? `<p class="muted">${esc(SBA.loginsErr ? t('sbLoginsErr') : '…')}</p>` : staff.length ? `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('sbStaffTitle'))}"><table class="tbl"><thead><tr><th scope="col">${esc(t('sbColUser'))}</th><th scope="col">${esc(t('sbColRole'))}</th><th scope="col">${esc(t('roColSite'))}</th><th scope="col">${esc(t('roColStatus'))}</th><th scope="col"><span class="sr">${esc(t('sbColSignin'))}</span></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="empty">${esc(t('sbStaffNone'))}</p>`}
@@ -6766,7 +6894,7 @@ const SBA = {
     let r; try{ r = await SBA.admin(body); }catch(e){ r = { ok: false, code: 'NET' }; }
     SBA.ro.busy = false;
     if(r && r.ok){
-      if(r.login){ const L = { user_id: r.login.userId, role: r.login.role, site_id: r.login.siteId, provider_id: r.login.providerId, login_name: r.login.loginName, active: r.login.active };
+      if(r.login){ const L = { user_id: r.login.userId, role: r.login.role, site_id: r.login.siteId, provider_id: r.login.providerId, login_name: r.login.loginName, active: r.login.active, is_primary: r.login.primary === true };
         SBA.logins = (SBA.logins || []).filter(x => x.user_id !== L.user_id).concat([L]); }
       if(r.secret){ SBA.ro.shown = { role: r.login.role, secret: String(r.secret), name: name || SBA.loginLabel({ role: r.login.role, provider_id: r.login.providerId, login_name: r.login.loginName }), at: Date.now() };
         ui.focusTop = false; window.scrollTo(0, 0); }
@@ -6796,6 +6924,9 @@ const SBA = {
     if(k === 'bulkReGo') return SBA.bulkReGo();
     if(k === 'bulkDone'){ SBA.bulk.pins = null; SBA.bulk.failed = []; render(); return; }
     if(k === 'staffAdd'){ SBA.ro.form = { loginName: '', role: 'coordinator', siteId: ((state.roster.sites || []).find(s => s.active !== false) || {}).id || '' }; SBA.ro.msg = ''; render(); setTimeout(() => { const i = document.getElementById('sb-nu'); if(i) i.focus(); }, 30); return; }
+    if(k === 'staffEdit'){ const L = (SBA.logins || []).find(x => x.user_id === d.id); if(!L) return;
+      SBA.ro.form = { editId: L.user_id, loginName: L.login_name || '', role: L.role, siteId: L.site_id || ((state.roster.sites || []).find(s => s.active !== false) || {}).id || '', primary: !!L.is_primary, providerId: L.provider_id || '' };
+      SBA.ro.msg = ''; render(); setTimeout(() => { const i = document.getElementById('sb-nr'); if(i) i.focus(); }, 30); return; }
     if(k === 'staffCancel'){ SBA.ro.form = null; SBA.ro.msg = ''; render(); return; }
     if(k === 'roCreate'){ const p = provider(d.id); const r = await SBA.run({ action: 'createLogin', role: 'provider', providerId: d.id }, p.name); if(r && !r.ok) toast(SBA.errText(r.code), true); return; }
     if(k === 'roReset'){ const L = (SBA.logins || []).find(x => x.user_id === d.id); const r = await SBA.run({ action: 'setSecret', userId: d.id }, SBA.loginLabel(L)); if(r && !r.ok) toast(SBA.errText(r.code), true); return; }
@@ -6861,8 +6992,18 @@ const SBA = {
   },
   async staffAdd(){
     const F = SBA.ro.form; if(!F) return;
-    const body = { action: 'createLogin', role: F.role === 'hr' ? 'hr' : 'coordinator', loginName: String(F.loginName || '').trim().toLowerCase() };
-    if(body.role === 'coordinator') body.siteId = F.siteId;
+    if(F.editId){
+      const body = { action: 'updateLogin', userId: F.editId, role: F.role };
+      if(F.role === 'coordinator'){ body.siteId = F.siteId; body.primary = !!F.primary; }
+      if(F.role === 'admin') body.providerId = F.providerId || null;
+      const r = await SBA.run(body, F.loginName);
+      if(r && r.ok){ SBA.ro.form = null; SBA.loadLogins().then(render); render(); }
+      else if(r){ SBA.ro.msg = SBA.errText(r.code); render(); }
+      return;
+    }
+    const body = { action: 'createLogin', role: ['hr', 'admin'].indexOf(F.role) >= 0 ? F.role : 'coordinator', loginName: String(F.loginName || '').trim().toLowerCase() };
+    if(body.role === 'coordinator'){ body.siteId = F.siteId; body.primary = !!F.primary; }
+    if(body.role === 'admin' && F.providerId) body.providerId = F.providerId;
     const r = await SBA.run(body, body.loginName);
     if(r && r.ok){ SBA.ro.form = null; render(); }
     else if(r){ SBA.ro.msg = SBA.errText(r.code); window.__roForce = 'sb-nu'; render(); }
@@ -6887,7 +7028,7 @@ SB.connect = async function(){
   if(got && SB.client){
     try{ const s = await SB.client.auth.getSession(); const uid = s && s.data && s.data.session && s.data.session.user && s.data.session.user.id; if(uid) SBA.claimOutbox(uid); }catch(e){}
     SBA.last = Date.now();
-    if(SB.me && SB.me.role === 'hr') SBA.loadLogins();
+    if(SB.me && (SB.me.role === 'hr' || SB.me.role === 'admin')) SBA.loadLogins();
   }
   return got;
 };
@@ -6911,8 +7052,10 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', ev => {
   const id = ev.target && ev.target.id;
-  if(id === 'sb-nr' && SBA.ro.form){ SBA.ro.form.role = ev.target.value; render(); }
+  if(id === 'sb-nr' && SBA.ro.form){ SBA.ro.form.role = ev.target.value; window.__roForce = 'sb-nr'; render(); }
   else if(id === 'sb-ns' && SBA.ro.form) SBA.ro.form.siteId = ev.target.value;
+  else if(id === 'sb-np' && SBA.ro.form) SBA.ro.form.primary = ev.target.value === '1';
+  else if(id === 'sb-nv' && SBA.ro.form) SBA.ro.form.providerId = ev.target.value;
 });
 document.addEventListener('keydown', ev => {
   if(!(SB.blocked && SBA.mode === 'pin') || ev.ctrlKey || ev.metaKey || ev.altKey) return;
