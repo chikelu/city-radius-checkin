@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-E0FkMWmj8SimrZuhW6v0VmCXykpegx/jMBgSCFgp0vo=' 'sha256-G7iZh3akDTO0f5V06Gc5wGfxe8JXtK4XA+xFGc1QXYw=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TdzTF7KKc0bOKzdtjyw9SoSirruICiD0T99MtDBoyNY=' 'sha256-8kqIJnoXU9ygvM40B21NE2IqdsROZIA7zXOMClERpD0=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -488,6 +488,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     'TOO_EARLY', 'NOTHING_TO_DO', 'FORM_PENDING', 'FORM_REJECTED', 'NOT_AUTO', 'AFTER_CUTOFF', 'BEFORE_CLOCK_IN',
     'WINDOW_CLOSED', 'NOT_PENDING', 'SELF_VERIFY', 'COMMENT_REQUIRED', 'INACTIVE',
     'TOO_EARLY_FOR_SITE',
+    // T-37 admin-providers
+    'NOT_ADMIN_PROVIDER', 'NOT_YOURS',
     // T-15
     'SENSITIVE'
   ]);
@@ -753,6 +755,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     if (ph.status === 'taken') return PHOTO_ID_RE.test(String(ph.id || '')) ? { status: 'taken', id: String(ph.id) } : null;
     return { status: ph.status };
   }
+  // T-37: admin-providers are salaried staff who can take members like a provider; they are not paid by the hour
+  function isAdminProvider(p) { return !!p && p.kind === 'salaried' && p.active !== false; }
   function photoPath(shift) {
     return shift && shift.photo && shift.photo.status === 'taken' ? shift.siteId + '/' + shift.date + '/' + shift.providerId + '/' + shift.photo.id + '.jpg' : null;
   }
@@ -946,6 +950,19 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
         { col: 'assignments', id: old.id, doc: old },
         { col: 'assignments', id: asg.id, doc: asg }
       ], ev);
+    },
+
+    // T-37: a provider hands a member who is with them to an admin-provider (a salaried provider), never to another
+    // hourly provider. Same effect as a coordinator's move: the visit ends ("reassigned") and the admin-provider gets an offer.
+    handOff: function (state, a, ctx, date) {
+      var from = provider(state, a.fromProviderId);
+      if (!from) return fail('NOT_FOUND', { what: 'provider', id: a.fromProviderId });
+      var to = provider(state, a.toProviderId);
+      if (!to) return fail('NOT_FOUND', { what: 'provider', id: a.toProviderId });
+      if (!isAdminProvider(to)) return fail('NOT_ADMIN_PROVIDER', { providerName: to.name });
+      var mine = currentAssignments(state, a.memberId, date).filter(function (x) { return x.providerId === from.id && x.status === 'active'; });
+      if (!mine.length) return fail('NOT_YOURS', { memberName: memberName(state, a.memberId), providerName: from.name });
+      return handlers.reassign(state, { memberId: a.memberId, toProviderId: to.id, fromProviderId: from.id }, ctx, date);
     },
 
     // Mark (or unmark) documentation complete for an ended visit (BR-11).
@@ -1803,7 +1820,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     var rows = timesheetRows(state, { from: f.from, to: f.to }, now);
     var by = {};
     arr(roster(state).providers).forEach(function (p) {
-      if ((p.kind || 'employee') === 'employee') return;
+      if ((p.kind || 'employee') !== 'contractor') return;   // employees go in the payroll file; salaried admin-providers in neither
       by[p.id] = { providerId: p.id, name: p.name, contractorId: p.payrollId ? String(p.payrollId) : '', siteName: siteName(state, p.siteId),
         days: 0, presenceMin: 0, withMemberMin: 0, visits: 0, units: 0, unverifiedDays: 0, openDays: 0 };
     });
@@ -2052,7 +2069,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     var name = String(p.name || '').trim();
     if (!name) errors.push('name_required'); else if (looksLikeSsn(name)) errors.push('name_ssn'); else if (sensitiveKind(name)) errors.push('name_sensitive');
     if (!p.siteId || !arr(rost.sites).some(function (s) { return s.id === p.siteId; })) errors.push('site_required');
-    if (['employee', 'contractor'].indexOf(p.kind || 'employee') < 0) errors.push('kind_invalid');
+    if (['employee', 'contractor', 'salaried'].indexOf(p.kind || 'employee') < 0) errors.push('kind_invalid');
     var pid = cleanPayrollId(p.payrollId), prob = payrollIdProblem(pid);
     if (prob) errors.push(prob);
     var others = arr(rost.providers).filter(function (o) { return o.id !== (originalId || p.id); });
@@ -2872,7 +2889,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     contractorReport: contractorReport,
     contractorReportCsv: contractorReportCsv,
     cleanPhoto: cleanPhoto,
-    photoPath: photoPath,
+    photoPath: photoPath, isAdminProvider: isAdminProvider,
     holidayMap: holidayMap,
     EARLY_CLOCK_IN_CHOICES: EARLY_CLOCK_IN_CHOICES.slice(),
     checkout: checkout,
@@ -2951,6 +2968,9 @@ en:{
   hi:'Hi, {name}',
   offTitle:'You are not clocked in', offText:'Tap the green button when you get to {site}.',
   clockIn:'Clock in',
+  handBtn:'Hand {first} to an admin-provider', handTitle:'Hand {name} to an admin-provider', handNote:'{first} is offered to the admin-provider you pick. Your time with {first} ends now. You can only hand members to admin-providers, not to other providers.',
+  handNone:'No admin-provider is clocked in with room right now. Ask your coordinator.', handToast:'{first} was offered to {provider}.', adminTag:'Admin-provider',
+  kind_salaried:'Salaried (admin-provider)', err_NOT_ADMIN_PROVIDER:'{providerName} is not an admin-provider. You can only hand members to admin-providers.', err_NOT_YOURS:'{memberName} is not with you right now.',
   offHelp:'Clock in when you get here. Your time with a member starts when you tap Accept.',
   geoNote:'Your location is checked once when you clock in and once when you sign off, to confirm you are at the site. It is kept for 90 days.',
   geoAt:'At site', geoAway:'Away · {dist}', geoRough:'Location too rough', geoRoughLong:'Location too rough (±{m} m)', geoDenied:'Location not shared', geoNoLoc:'No location', geoMissing:'Location not received', geoNoSite:'Site location not set', geoAcc:'±{m} m',
@@ -3826,6 +3846,7 @@ function providerView(){
       <div class="visit-top"><span class="avatar">${esc(initials(m.name))}</span><div><p class="name">${esc(m.name)}</p><p class="since">${esc(t('since',{time:tm(a.acceptedAt)}))}</p></div></div>
       <div class="timer"><b class="num">${esc(dur(E.visitMinutes(a, now)))}</b><span>${esc(t('timeWith'))}</span></div>
       <button class="btn btn-line" data-act="leaveOpen" data-id="${esc(a.id)}">${I.door}${esc(t('leaving',{first:first(m.name)}))}</button>
+      ${E.isAdminProvider(me()) ? '' : `<button class="btn btn-quiet" data-act="handOpen" data-id="${esc(a.id)}">${esc(t('handBtn',{first:first(m.name)}))}</button>`}
     </article>`;
   }).join('') : '';
   const notesTodo = !day.signedOff && missing.length ? `<h2 class="sec-title">${esc(t('notesTodoTitle'))}</h2>` + missing.map(a => notesCard(a, now)).join('') : '';
@@ -3869,7 +3890,7 @@ function providerCheckout(p, day, site, now){
   const co = E.checkout(state, p.id, today(), now);
   const stepBox = (n, ok, title, body) => `<section class="co-step ${ok?'is-ok':'is-todo'}"><h2><span class="co-badge">${ok?I.check:'!'}</span><span><span class="sr">${esc(t('step',{n}))}: </span>${esc(title)}</span></h2>${body}</section>`;
   const s1 = co.active.length
-    ? `<p>${esc(t('coMembersTodo'))}</p>` + co.active.map(a => { const m = member(a.memberId); return `<div class="item"><b>${esc(m.name)}</b><button class="btn btn-line" data-act="leaveOpen" data-id="${esc(a.id)}">${I.door}${esc(t('leaving',{first:first(m.name)}))}</button></div>`; }).join('')
+    ? `<p>${esc(t('coMembersTodo'))}</p>` + co.active.map(a => { const m = member(a.memberId); return `<div class="item"><b>${esc(m.name)}</b><button class="btn btn-line" data-act="leaveOpen" data-id="${esc(a.id)}">${I.door}${esc(t('leaving',{first:first(m.name)}))}</button>${E.isAdminProvider(me()) ? '' : `<button class="btn btn-quiet" data-act="handOpen" data-id="${esc(a.id)}">${esc(t('handBtn',{first:first(m.name)}))}</button>`}</div>`; }).join('')
     : `<p>${esc(t('coMembersOk'))}</p>`;
   const s2 = co.offers.length
     ? `<p>${esc(t('coOffersTodo'))}</p>` + co.offers.map(a => { const m = member(a.memberId); return `<div class="item"><b>${esc(m.name)}</b><button class="btn btn-line" data-act="declineLeaving" data-id="${esc(a.id)}">${esc(t('coDeclineLeaving',{first:first(m.name)}))}</button></div>`; }).join('')
@@ -4676,7 +4697,7 @@ function rosterForm(){
   const sites = (state.roster.sites||[]).map(x => `<option value="${esc(x.id)}" ${e.rec.siteId===x.id?'selected':''}>${esc(x.name)}</option>`).join('');
   const title = t(isP ? (e.id ? 'roFormEditP' : 'roFormNewP') : (e.id ? 'roFormEditM' : 'roFormNewM'));
   const fields = isP ? `
-      <div class="field"><label for="rf-kind">${esc(t('roFKind'))}</label><select id="rf-kind" data-rf="kind"><option value="employee" ${e.rec.kind!=='contractor'?'selected':''}>${esc(t('kind_employee'))}</option><option value="contractor" ${e.rec.kind==='contractor'?'selected':''}>${esc(t('kind_contractor'))}</option></select></div>
+      <div class="field"><label for="rf-kind">${esc(t('roFKind'))}</label><select id="rf-kind" data-rf="kind"><option value="employee" ${(e.rec.kind||'employee')==='employee'?'selected':''}>${esc(t('kind_employee'))}</option><option value="contractor" ${e.rec.kind==='contractor'?'selected':''}>${esc(t('kind_contractor'))}</option><option value="salaried" ${e.rec.kind==='salaried'?'selected':''}>${esc(t('kind_salaried'))}</option></select></div>
       <div class="field"><label for="rf-payroll">${esc(t('roFPayroll'))}</label><input id="rf-payroll" data-rf="payrollId" value="${esc(e.rec.payrollId||'')}" autocomplete="off" spellcheck="false" maxlength="12"><span class="muted" style="font-size:14px">${esc(t('roFPayrollHelp'))}</span></div>`
     : `
       <div class="field"><label for="rf-client">${esc(t('roFClient'))}</label><input id="rf-client" data-rf="clientId" value="${esc(e.rec.clientId||'')}" autocomplete="off" spellcheck="false" maxlength="20"></div>
@@ -5626,7 +5647,7 @@ function coordView(){
         <button class="btn btn-sm" data-act="withdraw" data-id="${esc(a.id)}">${esc(t('cancelOffer'))}</button></div>`;
     })).join('');
     const give = d.clockedIn && pv.room > 0 && b.waiting.some(w => (w.need === 2 ? w.open > 0 : !w.offer)) ? `<div class="row-actions"><button class="btn btn-sm" data-act="pickMemberOpen" data-id="${esc(p.id)}">${esc(t('giveMember',{first:first(p.name)}))}</button></div>` : '';
-    return `<div class="row prov${pv.state==='off'?' off':''}"><div class="row-top"><b>${esc(p.name)}</b>${pill}${loadPill}${notesPill}${meta}</div>
+    return `<div class="row prov${pv.state==='off'?' off':''}"><div class="row-top"><b>${esc(p.name)}</b>${E.isAdminProvider(p) ? `<span class="pill pill-count">${esc(t('adminTag'))}</span>` : ''}${pill}${loadPill}${notesPill}${meta}</div>
       ${items ? `<div class="mlist">${items}</div>` : ''}${give}</div>`;
   }).join('');
 
@@ -5726,6 +5747,15 @@ function sheetBody(sh){
     const coord = sh.kind === 'coordLeave';
     return `<h2 id="sheet-h">${esc(t(coord?'coordLeaveTitle':'leaveTitle',{name:m.name}))}</h2><p class="lead">${esc(t(coord?'coordLeaveAsk':'leaveAsk',{first:f}))}</p>
       ${reasons.map(r => `<button class="opt" data-act="leaveReason" data-reason="${r}">${esc(t('reason_'+r))}</button>`).join('')}
+      <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
+  }
+  if(sh.kind === 'hand'){
+    if(!a || a.status !== 'active') return null;
+    const m = member(a.memberId), f = first(m.name), meP = me();
+    const b = E.board(eff(), a.siteId, date, now);
+    const opts = b.providers.filter(pv => E.isAdminProvider(pv.provider) && pv.provider.id !== (meP && meP.id) && pv.day.clockedIn && pv.state !== 'signed_off' && pv.room > 0);
+    return `<h2 id="sheet-h">${esc(t('handTitle',{name:m.name}))}</h2><p class="note">${esc(t('handNote',{first:f}))}</p>
+      ${opts.length ? opts.map(pv => `<button class="opt" data-act="handDo" data-id="${esc(pv.provider.id)}"><span class="avatar">${esc(initials(pv.provider.name))}</span><span class="grow">${esc(pv.provider.name)}<small class="num">${esc(pv.state === 'free' ? t('opt_free',{dur:dur(pv.freeSinceMin)}) : t('opt_room',{n:pv.load, max:(siteOf(a.siteId)||{}).maxRatio}))}</small></span></button>`).join('') : `<p class="lead">${esc(t('handNone'))}</p>`}
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
   }
   if(sh.kind === 'decline'){
@@ -6005,6 +6035,14 @@ document.addEventListener('click', async ev => {
       break;
     }
     case 'leaveOpen': ui.sheet = {kind:'leave', assignmentId:d.id, step:'reason'}; render(); break;
+    case 'handOpen': ui.sheet = {kind:'hand', assignmentId:d.id, _fresh:true}; render(); break;
+    case 'handDo': {
+      const a = (state.assignments||[]).find(x => x.id === ui.sheet.assignmentId), meP = me(); if(!a || !meP) break;
+      const r = await act({type:'handOff', memberId:a.memberId, fromProviderId:meP.id, toProviderId:d.id});
+      ui.sheet = null; render();
+      if(r.ok) toast(t('handToast',{first:first(member(a.memberId).name), provider:provider(d.id).name}));
+      break;
+    }
     case 'coordLeaveOpen': ui.sheet = {kind:'coordLeave', assignmentId:d.id, step:'reason'}; render(); break;
     case 'leaveReason':
       ui.sheet.reason = d.reason;
@@ -6345,7 +6383,7 @@ const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/d
   siteRow(s){ return {id:s.id, name:s.name, max_ratio:s.maxRatio == null ? 4 : s.maxRatio, signoff_hour:s.signoffHour == null ? 18 : s.signoffHour,
     work_days:Array.isArray(s.workDays) ? s.workDays.map(Number) : [1,2,3,4,5], start_time:s.startTime || null,
     early_clock_in_min:s.earlyClockInMin == null ? null : s.earlyClockInMin, pair_load:s.pairLoad === 'one' ? 'one' : 'all', active:s.active !== false}; },
-  providerRow(p){ return {id:p.id, name:p.name, site_id:p.siteId, kind:p.kind === 'contractor' ? 'contractor' : 'employee', payroll_id:p.payrollId ? String(p.payrollId) : null, active:p.active !== false}; },
+  providerRow(p){ return {id:p.id, name:p.name, site_id:p.siteId, kind:p.kind === 'contractor' || p.kind === 'salaried' ? p.kind : 'employee', payroll_id:p.payrollId ? String(p.payrollId) : null, active:p.active !== false}; },
   memberRow(m){ return {id:m.id, name:m.name, site_id:m.siteId, vtrack_id:m.vtrackId || null, client_id:m.clientId || null, program:m.program || null, staff_need:Number(m.staffNeed) === 2 ? 2 : 1, active:m.active !== false}; },
   mapConfig(r, lockRows){ r = r || {}; const locks = {};
     (lockRows||[]).forEach(l => { locks[String(l.period_from).slice(0,10) + '_' + String(l.period_to).slice(0,10)] = l.snapshot; });
