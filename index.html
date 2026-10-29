@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-fW/ZLRAu4ZJtZG1HvamfUdKGIFMj1BfToI7HPupUOeY=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-AICq//3BNm9pXnxds7d75wp0s/TXDa6Abm9AqQabnk8=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -227,7 +227,7 @@ button.count:hover{border-color:var(--ink)}
 .ph-file-btn{position:relative;cursor:pointer}.ph-file-btn.is-busy{opacity:.7;pointer-events:none}.ph-file{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}.ph-file-btn:focus-within{outline:3px solid var(--focus,#1a5fd0);outline-offset:2px}
 .push-card p{margin:0 0 10px}.push-steps{margin:0 0 10px;padding-left:22px;display:flex;flex-direction:column;gap:6px}.push-on{display:flex;align-items:center;gap:8px;margin:0;color:var(--muted,#555);font-size:16px}.push-on svg{width:20px;height:20px;flex:0 0 auto}.push-on span{flex:1}
 .sb-pin{font-size:22px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
-@media print{body *{visibility:hidden}.sb-pins,.sb-pins *{visibility:visible}.sb-pins{position:absolute;left:0;top:0;width:100%;border:0}.sb-pins .no-print{display:none}.sb-pins .scroll{overflow:visible}.sb-pin-tbl tr{page-break-inside:avoid}}
+@media print{body *{visibility:hidden}.sb-pins,.sb-pins *{visibility:visible}.sb-pins{position:absolute;left:0;top:0;width:100%;border:0}.sb-pins .no-print{display:none}.sb-pins .scroll{overflow:visible}.sb-pin-tbl tr{page-break-inside:avoid}.dr-rep,.dr-rep *{visibility:visible}.dr-rep{position:absolute;left:0;top:0;width:100%;padding:0}.dr-rep .no-print,.dr-rep .tabs,.dr-rep .sites{display:none}.dr-rep .scroll{overflow:visible}.dr-rep .panel{break-inside:avoid;box-shadow:none}.dr-rep .tbl tr{page-break-inside:avoid}}
 .ph-cam{display:flex;flex-direction:column;align-items:center;gap:8px}
 .ph-big{width:100%;max-width:300px;aspect-ratio:1/1;object-fit:cover;border-radius:18px;background:var(--sunk);border:1px solid var(--line,rgba(0,0,0,.15))}
 .ph-wait{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:18px;padding:12px}
@@ -373,6 +373,10 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
 .adj-hist ul{margin:0;padding-left:20px}
 .adj-hist li{margin:4px 0}
 .later-pay summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.dr-kpis button.count{font:inherit;text-align:left;cursor:pointer;color:inherit}
+.dr-hl li.dr-bad .ck-ic{color:var(--offer)}.dr-hl li.dr-good .ck-ic{color:var(--go)}
+.dr-group{margin:18px 0 6px;font-size:20px}.dr-sec.dr-bad{border-left:4px solid var(--offer-line)}.dr-sec.dr-good{border-left:4px solid var(--go)}
+.dr-names{display:flex;flex-wrap:wrap;gap:6px;margin:0}.dr-h{margin:0 0 6px}.dr-sec .tbl th[scope=row]{font-weight:700;color:var(--ink);background:none;font-size:15px}
 .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
 @media (max-width:900px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -3112,6 +3116,30 @@ en:{
   /* step 4 */
   
   tabFloor:'Floor', tabSheets:'Timesheets', allSites:'All sites',
+  tabDay:'Day report', drTitle:'Day report', drDay:'Day', drYesterday:'Yesterday', drFor:'{day} · {site}',
+  drSub:'Who did what, by name. Tap a number to jump to the list.', drStillLoading:'Photos and locations are still loading.', drNone:'Nobody worked and no member came on this day.',
+  drK_prov:'Providers worked', drK_mem:'Members came', drK_self:'Tapped End my day', drK_fixes:'Sign-off fixes waiting', drK_waits:'Members waited too long', drK_photo:'Clock-ins without a photo',
+  drGlance:'At a glance', drNeeds:'Needs action', drAllGood:'Nothing needs action for this day.',
+  drH_signoff:'{n} of {of} providers tapped End my day ({pct}%). The goal is everyone.', drH_fixes:'{n} sign-off fix(es) waiting for a coordinator. The oldest is from {oldest}. They hold up payroll.',
+  drH_waits:'{n} member(s) waited more than 20 minutes for a provider. The longest wait was {max} minutes.', drH_waitsOk:'No member waited more than {min} minutes for a provider.',
+  drH_slow:'{n} offer(s) not accepted within {min} minutes. Time with the member before accepting is not counted.', drH_never:'{n} member(s) checked in but never given to a provider.',
+  drH_photo:'{n} clock-in(s) without a photo.', drH_photoOk:'Every clock-in has a photo.',
+  drS_noend:'Did not tap End my day', drS_noendHelp:'The app signed them off at the end of the day. Each one needs a sign-off fix with the real end time.',
+  drS_in:'Still clocked in', drS_fixes:'Sign-off fixes waiting for a decision', drS_fixesHelp:'Every fix up to this day, oldest first. Payroll cannot close until each one is decided.',
+  drS_waits:'Members who waited more than {min} minutes', drS_slow:'Offers not accepted within {min} minutes', drS_slowHelp:'Usually the provider did not see the offer. Phone alerts fix this.',
+  drS_never:'Checked in but never given to a provider', drS_neverHelp:'Check whether these members left, or were served without being given out in the app.',
+  drS_photo:'Clock-ins without a photo', drS_photoHelp:'A photo taken without internet sends itself when the phone is back online with the app open.',
+  drS_loc:'Clock-in location not at the site', drS_good:'Tapped End my day', drS_all:'Everyone who worked',
+  drC_ended:'How the day ended', drC_next:'What is next', drC_day:'Day', drC_reason:'Reason', drC_claim:'Says they left at', drC_arrived:'Arrived', drC_offered:'Offered', drC_accepted:'Accepted',
+  drC_waited:'Waited', drC_to:'Offered to', drC_members:'Members', drC_photo:'Photo', drC_loc:'Location',
+  drE_self:'Tapped End my day', drE_auto:'Auto sign-off', drE_fix:'Auto sign-off, fix sent', drE_fixed:'Auto sign-off, fixed', drE_in:'Still clocked in',
+  drN_needFix:'Needs a fix from the provider', drN_review:'Coordinator: review the fix', drN_done:'Done',
+  drO_waiting:'Not yet', drO_never:'Never accepted',
+  drP_yes:'Yes', drP_missing:'Taken, not received', drP_none:'No photo', drP_skipped:'Skipped', drP_no_camera:'No camera',
+  drG_away:'Away from the site', drG_none:'No location',
+  drFixBtn:'Review the fixes', drPrint:'Print', drCsv:'Download (CSV)',
+  drCsvCols:'Provider|Site|Type|Clocked in|Ended|How the day ended|Members (count)|Members|Hours with members|Hours at work|Photo|Location',
+  alWhat_day_report:'the day report',
   rTitle:'Timesheets', rHrTitle:'Timesheets · all sites',
   tabPayroll:'Payroll close', payTitle:'Payroll close', paySub:'Check the pay period, then download the hours sheet and type the hours into payroll. Only employees go on the sheet.',
   payThis:'This pay period', payLast:'Last pay period', payPeriodLine:'Pay period {from} – {to}', payPaidOn:'Paid {pay}',
@@ -3662,8 +3690,8 @@ function draw(){
   if(BACKEND === 'supabase' && (SB.blocked || SBA.hold())){ const h = SB.panel(); if(h !== lastApp){ app.innerHTML = h; lastApp = h; } return; }
   let html;
   if(ui.role === 'provider' && me()) html = topBar() + (ui.mytime ? myTimesheet(me()) : providerView());
-  else if(ui.role === 'coordinator') html = topBar() + (!coordSite() ? notSetUp() : ui.view === 'reports' ? reportsView('coord') : ui.view === 'vtrack' ? vtrackView() : ui.view === 'eod' ? eodView() : coordView());
-  else if(ui.role === 'hr') html = topBar() + (ui.view === 'payroll' ? payrollView() : ui.view === 'roster' ? rosterView() : ui.view === 'activity' ? activityView() : reportsView('hr'));
+  else if(ui.role === 'coordinator') html = topBar() + (!coordSite() ? notSetUp() : ui.view === 'reports' ? reportsView('coord') : ui.view === 'day' ? dayReportView('coord') : ui.view === 'vtrack' ? vtrackView() : ui.view === 'eod' ? eodView() : coordView());
+  else if(ui.role === 'hr') html = topBar() + (ui.view === 'payroll' ? payrollView() : ui.view === 'roster' ? rosterView() : ui.view === 'activity' ? activityView() : ui.view === 'day' ? dayReportView('hr') : reportsView('hr'));
   
   else html = SBA.screen();
   if(BACKEND === 'supabase' && ui.role === 'hr') html = html.replace('</header>', '</header>' + T13.banner());
@@ -3951,9 +3979,216 @@ function providerFix(p){
     <button class="btn btn-quiet" data-act="fixClose">${esc(t('back'))}</button>
   </main>`;
 }
+/* ---------- T-40 Day report: one day at one site (or all sites), by name, for the coordinator and HR ----------
+   DAYREP is pure (test_t40.js runs it in Node): records in, a plain summary out. Names stay inside the app: the page
+   reads only what the signed-in coordinator (own site) or HR may already see. */
+/*DAYREP*/const DAYREP = {
+  WAIT_MIN: 20,      // a member waiting longer than this for a first offer is listed
+  ACCEPT_MIN: 10,    // an offer not accepted within this is listed
+  build(data, o){
+    const E = o.E, date = o.date, site = o.siteId || null, now = o.now;
+    const R = data.roster || {}, provs = R.providers || [], mems = R.members || [], sites = R.sites || [];
+    const pName = id => (provs.find(p => p.id === id) || {}).name || 'Someone';
+    const mName = id => (mems.find(m => m.id === id) || {}).name || 'A member';
+    const sName = id => (sites.find(s => s.id === id) || {}).name || id;
+    const here = x => x.date === date && (!site || x.siteId === site);
+    const shifts = (data.shifts || []).filter(here);
+    const asg = (data.assignments || []).filter(here);
+    const chk = (data.checkins || []).filter(here);
+    const mins = (a, b) => Math.max(0, Math.round((b - a) / 60000));
+    // time on the clock and with members, from the same rules as the timesheet
+    const ts = {}; E.timesheetRows(data, { from: date, to: date, siteId: site }, now).forEach(r => { ts[r.providerId] = r; });
+    const photoOf = sh => {
+      const ph = sh.photo && sh.photo.status;
+      if(ph === 'skipped' || ph === 'no_camera') return ph;
+      if(!o.photos) return ph === 'taken' ? 'yes' : null;
+      return o.photos.has(sh.providerId + '|' + sh.date) ? 'yes' : ph === 'taken' ? 'missing' : 'none';
+    };
+    const geoOf = sh => { if(!o.geo) return null; const g = o.geo.find(x => x.shift_id === sh.id && x.kind === 'in'); return g ? g.status : 'none'; };
+    const ended = sh => sh.status === 'signed_off' ? 'self' : sh.status === 'clocked_in' ? 'still_in'
+      : sh.status === 'correction_pending' ? 'fix_sent' : sh.status === 'corrected' ? 'fixed' : 'auto';
+    const people = shifts.map(sh => {
+      const mine = asg.filter(a => a.providerId === sh.providerId && a.acceptedAt != null);
+      const t = ts[sh.providerId] || {};
+      const pv = provs.find(p => p.id === sh.providerId) || {};
+      return { providerId: sh.providerId, name: pName(sh.providerId), kind: pv.kind || 'employee', siteName: sName(sh.siteId),
+        inAt: sh.clockInAt, outAt: sh.signedOffAt || sh.clockOutAt || null, ended: ended(sh),
+        members: Array.from(new Set(mine.map(a => mName(a.memberId)))), workMin: t.presenceMin || 0, withMemberMin: t.withMemberMin || 0,
+        photo: photoOf(sh), geo: geoOf(sh) };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+    // members: arrival -> first offer -> accepted
+    const firstIn = {}; chk.forEach(c => { const at = c.checkedInAt != null ? c.checkedInAt : c.at; if(at == null) return; if(firstIn[c.memberId] == null || at < firstIn[c.memberId]) firstIn[c.memberId] = at; });
+    const waits = [], never = [];
+    Object.keys(firstIn).forEach(m => {
+      const offers = asg.filter(a => a.memberId === m && a.offeredAt != null).sort((a, b) => a.offeredAt - b.offeredAt);
+      if(!offers.length){ never.push({ member: mName(m), arrivedAt: firstIn[m] }); return; }
+      const w = mins(firstIn[m], offers[0].offeredAt);
+      if(w > DAYREP.WAIT_MIN) waits.push({ member: mName(m), arrivedAt: firstIn[m], offeredAt: offers[0].offeredAt, min: w, provider: pName(offers[0].providerId) });
+    });
+    const slow = asg.filter(a => a.offeredAt != null).map(a => {
+      const until = a.acceptedAt != null ? a.acceptedAt : a.endedAt != null ? a.endedAt : (o.date === E.dateKey(now) ? now : null);
+      if(until == null) return null;
+      const m = mins(a.offeredAt, until);
+      return m > DAYREP.ACCEPT_MIN ? { member: mName(a.memberId), provider: pName(a.providerId), offeredAt: a.offeredAt, acceptedAt: a.acceptedAt || null,
+        outcome: a.acceptedAt != null ? 'accepted' : a.status === 'offered' ? 'waiting' : a.status, min: m } : null;
+    }).filter(Boolean);
+    // fixes waiting for a decision: every day up to this one, oldest first
+    const fixes = (data.corrections || []).filter(c => c.status === 'pending' && c.date <= date && (!site || c.siteId === site))
+      .map(c => ({ name: pName(c.providerId), date: c.date, reason: c.reason, submittedAt: c.submittedAt, endAt: c.claimedEndAt }))
+      .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.name.localeCompare(b.name));
+    const by = k => people.filter(p => p.ended === k);
+    const served = new Set(asg.filter(a => a.acceptedAt != null).map(a => a.memberId));
+    const S = {
+      providers: people.length, members: Object.keys(firstIn).length, served: served.size,
+      selfSignOff: by('self').length, auto: by('auto').length + by('fix_sent').length + by('fixed').length, stillIn: by('still_in').length,
+      needFix: by('auto').length, fixesWaiting: fixes.length, longWaits: waits.length, slowOffers: slow.length, neverGiven: never.length,
+      noPhoto: people.filter(p => p.photo === 'missing' || p.photo === 'none' || p.photo === 'skipped' || p.photo === 'no_camera').length,
+      locIssues: people.filter(p => p.geo && p.geo !== 'at_site' && p.geo !== 'no_site').length,
+      oldestFix: fixes.length ? fixes[0].date : null, longestWait: waits.reduce((m, w) => Math.max(m, w.min), 0)
+    };
+    return {
+      date, siteId: site, S, people,
+      endedSelf: by('self'), noEndMyDay: people.filter(p => p.ended === 'auto' || p.ended === 'fix_sent' || p.ended === 'fixed'), stillIn: by('still_in'),
+      fixes, waits: waits.sort((a, b) => b.min - a.min), slow: slow.sort((a, b) => b.min - a.min), never: never.sort((a, b) => a.arrivedAt - b.arrivedAt),
+      noPhoto: people.filter(p => p.photo === 'missing' || p.photo === 'none' || p.photo === 'skipped' || p.photo === 'no_camera'),
+      locIssues: people.filter(p => p.geo && p.geo !== 'at_site' && p.geo !== 'no_site')
+    };
+  },
+  // the few lines at the top: what went well, what needs a decision
+  headline(D){
+    const S = D.S, out = [];
+    if(!S.providers) return out;
+    const pct = Math.round(S.selfSignOff / S.providers * 100);
+    out.push({ k: pct >= 80 ? 'good' : 'bad', key: 'drH_signoff', p: { n: S.selfSignOff, of: S.providers, pct } });
+    if(S.fixesWaiting) out.push({ k: 'bad', key: 'drH_fixes', p: { n: S.fixesWaiting, oldest: S.oldestFix } });
+    if(S.longWaits) out.push({ k: 'bad', key: 'drH_waits', p: { n: S.longWaits, max: S.longestWait } });
+    else if(S.members) out.push({ k: 'good', key: 'drH_waitsOk', p: { min: DAYREP.WAIT_MIN } });
+    if(S.slowOffers) out.push({ k: 'bad', key: 'drH_slow', p: { n: S.slowOffers, min: DAYREP.ACCEPT_MIN } });
+    if(S.neverGiven) out.push({ k: 'bad', key: 'drH_never', p: { n: S.neverGiven } });
+    if(S.noPhoto) out.push({ k: 'bad', key: 'drH_photo', p: { n: S.noPhoto } });
+    else out.push({ k: 'good', key: 'drH_photoOk', p: {} });
+    return out;
+  },
+  csv(D, ctx){
+    const q = v => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) || /^[=+\-@]/.test(s) ? '"' + (/^[=+\-@]/.test(s) ? "'" : '') + s.replace(/"/g, '""') + '"' : s; };
+    const head = ctx.cols.split('|');
+    const rows = D.people.map(p => [p.name, p.siteName, ctx.kind(p.kind), p.inAt ? ctx.tm(p.inAt) : '', p.outAt ? ctx.tm(p.outAt) : '', ctx.ended(p.ended),
+      p.members.length, p.members.join('; '), ctx.h(p.withMemberMin), ctx.h(p.workMin), ctx.photo(p.photo), ctx.geo(p.geo)]);
+    return [head].concat(rows).map(r => r.map(q).join(',')).join('\r\n') + '\r\n';
+  }
+};/*END-DAYREP*/
+// prod: which providers have a clock-in photo stored for the day (clockin_photos; RLS: HR all, coordinator own site)
+const DRP = {
+  cache: {}, busy: {},
+  get(date, site){
+    if(BACKEND !== 'supabase') return null;
+    
+    const k = date + '|' + (site || 'all'), c = this.cache[k];
+    if((!c || Date.now() - c.at > 60000) && !this.busy[k] && SB.client){
+      this.busy[k] = true;
+      let q = SB.client.from('clockin_photos').select('provider_id,work_date').eq('work_date', date);
+      if(site) q = q.eq('site_id', site);
+      q.then(r => {
+        this.busy[k] = false; const old = this.cache[k];
+        if(r.error){ if(!old) this.cache[k] = { at: Date.now(), err: true }; return; }
+        this.cache[k] = { at: Date.now(), set: new Set((r.data || []).map(x => x.provider_id + '|' + x.work_date)) };
+        if(!old || old.err || old.set.size !== this.cache[k].set.size) render();
+      }, () => { this.busy[k] = false; });
+    }
+    return c || null;
+    
+  }
+};
+function drState(mode){
+  const d = ui.dr = ui.dr || { date: E.addDays(today(), -1), siteId: mode === 'hr' ? 'all' : null };
+  if(mode === 'coord') d.siteId = ui.siteId;
+  return d;
+}
+function drBuild(mode){
+  const d = drState(mode), site = d.siteId === 'all' ? null : d.siteId;
+  const data = repData(E.addDays(d.date, -31), d.date);
+  if(!data) return { d, loading: true };
+  let photos = null, geo = null, wait = false;
+  if(BACKEND === 'supabase'){
+    const p = DRP.get(d.date, site); if(!p) wait = true; else if(!p.err) photos = p.set;
+    const g = GEOR.get(d.date, d.date, site); if(!g) wait = true; else if(!g.err) geo = g.rows;
+  }
+  return { d, wait, D: DAYREP.build(data, { E, date: d.date, siteId: site, now: Date.now(), photos, geo }) };
+}
+const DR_ENDED = { self: 'drE_self', auto: 'drE_auto', fix_sent: 'drE_fix', fixed: 'drE_fixed', still_in: 'drE_in' };
+function drPhoto(v){ return v == null ? '–' : t('drP_' + v); }
+function drGeo(v){ return v == null ? '–' : v === 'at_site' ? t('geoAt') : v === 'away' ? t('drG_away') : v === 'denied' ? t('geoDenied') : v === 'no_site' ? '–' : t('drG_none'); }
+function drTable(cols, rows){
+  return `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${cols.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => i === 0 ? `<th scope="row">${esc(c)}</th>` : `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function drSection(id, title, help, n, inner, tone){
+  return `<section class="panel dr-sec ${tone || ''}" id="dr-${id}"><h2>${esc(title)} <span class="muted num">${n}</span></h2>${help ? `<p class="muted" style="font-size:15px">${esc(help)}</p>` : ''}${inner}</section>`;
+}
+function dayReportView(mode){
+  const B = drBuild(mode), d = B.d;
+  const sites = mode === 'hr'
+    ? `<div class="sites" role="group" aria-label="${esc(t('site'))}">${['all'].concat((state.roster.sites||[]).map(x=>x.id)).map(id => `<button class="chipbtn" aria-pressed="${d.siteId===id}" data-act="drSite" data-id="${esc(id)}">${esc(siteLabel(id))}</button>`).join('')}</div>`
+    : `<div class="sites" role="group" aria-label="${esc(t('site'))}">${(state.roster.sites||[]).map(x => `<button class="chipbtn" aria-pressed="${x.id===ui.siteId}" data-act="site" data-id="${esc(x.id)}">${esc(x.name)}</button>`).join('')}</div>`;
+  const y = E.addDays(today(), -1);
+  const pick = `<div class="filters no-print"><div class="seg" role="group" aria-label="${esc(t('drDay'))}">
+      <button class="chipbtn" aria-pressed="${d.date===y}" data-act="drDate" data-id="${y}">${esc(t('drYesterday'))}</button>
+      <button class="chipbtn" aria-pressed="${d.date===today()}" data-act="drDate" data-id="${today()}">${esc(t('pToday'))}</button></div>
+    <div class="field"><label for="dr-date">${esc(t('drDay'))}</label><input type="date" id="dr-date" data-dr="date" value="${esc(d.date)}" max="${esc(today())}"></div></div>`;
+  const head = `<div class="board-head no-print"><h1>${esc(t('drTitle'))}</h1>${sites}</div>${mode === 'coord' ? viewTabs() : hrTabs()}`;
+  if(B.loading) return `<main class="board">${head}<section class="panel">${pick}</section><p class="empty">${esc(t('rLoading'))}</p></main>`;
+  const D = B.D, S = D.S;
+  const where = d.siteId === 'all' || !d.siteId ? t('allSites') : siteLabel(d.siteId);
+  const title = `<section class="panel dr-top"><h2 class="dr-h">${esc(t('drFor', {day: fmtDay(d.date), site: where}))}</h2>${pick}
+    <p class="muted" style="font-size:15px">${esc(t('drSub'))}${B.wait ? ' ' + esc(t('drStillLoading')) : ''}</p></section>`;
+  if(!S.providers && !S.members) return `<main class="board dr-rep">${head}${title}<p class="empty">${esc(t('drNone'))}</p></main>`;
+  const k = (n, label, hot, jump) => jump ? `<button type="button" class="count${hot ? ' hot' : ''}" data-act="drJump" data-id="${jump}"><b class="num">${n}</b><span>${esc(label)}</span></button>` : `<div class="count"><b class="num">${n}</b><span>${esc(label)}</span></div>`;
+  const kpis = `<div class="kpis dr-kpis">
+    ${k(S.providers, t('drK_prov'), false, 'all')}
+    ${k(S.members, t('drK_mem'), false, null)}
+    ${k(S.selfSignOff + ' / ' + S.providers, t('drK_self'), S.selfSignOff < S.providers, 'noend')}
+    ${k(S.fixesWaiting, t('drK_fixes'), S.fixesWaiting > 0, 'fixes')}
+    ${k(S.longWaits, t('drK_waits'), S.longWaits > 0, 'waits')}
+    ${k(S.noPhoto, t('drK_photo'), S.noPhoto > 0, 'photo')}</div>`;
+  const hl = DAYREP.headline(D).map(h => `<li class="ck ${h.k === 'good' ? 'ok' : 'todo'} dr-${h.k}"><span class="ck-ic">${h.k === 'good' ? I.check : I.alert}</span><span>${esc(t(h.key, Object.assign({}, h.p, h.p.oldest ? {oldest: fmtDay(h.p.oldest)} : {})))}</span></li>`).join('');
+  const glance = `<section class="panel"><h2>${esc(t('drGlance'))}</h2><ul class="cklist dr-hl">${hl}</ul></section>`;
+  const secs = [];
+  if(D.noEndMyDay.length) secs.push(drSection('noend', t('drS_noend'), t('drS_noendHelp'), D.noEndMyDay.length,
+    drTable([t('cProvider'), t('cIn'), t('drC_ended'), t('drC_next')], D.noEndMyDay.map(p => [p.name, p.inAt ? tm(p.inAt) : '', t(DR_ENDED[p.ended]), t(p.ended === 'auto' ? 'drN_needFix' : p.ended === 'fix_sent' ? 'drN_review' : 'drN_done')])), 'dr-bad'));
+  if(D.stillIn.length) secs.push(drSection('in', t('drS_in'), '', D.stillIn.length,
+    drTable([t('cProvider'), t('cIn')], D.stillIn.map(p => [p.name, p.inAt ? tm(p.inAt) : ''])), 'dr-bad'));
+  if(D.fixes.length) secs.push(drSection('fixes', t('drS_fixes'), t('drS_fixesHelp'), D.fixes.length,
+    drTable([t('cProvider'), t('drC_day'), t('drC_reason'), t('drC_claim')], D.fixes.map(f => [f.name, fmtDay(f.date), t('cr_' + f.reason), f.endAt ? tm(f.endAt) : ''])) +
+    (mode === 'coord' ? `<div class="row-actions no-print"><button class="btn btn-sm primary" data-act="drFixes">${esc(t('drFixBtn'))}</button></div>` : ''), 'dr-bad'));
+  if(D.waits.length) secs.push(drSection('waits', t('drS_waits', {min: DAYREP.WAIT_MIN}), '', D.waits.length,
+    drTable([t('cMember'), t('drC_arrived'), t('drC_offered'), t('drC_waited'), t('drC_to')], D.waits.map(w => [w.member, tm(w.arrivedAt), tm(w.offeredAt), dur(w.min), w.provider])), 'dr-bad'));
+  if(D.slow.length) secs.push(drSection('slow', t('drS_slow', {min: DAYREP.ACCEPT_MIN}), t('drS_slowHelp'), D.slow.length,
+    drTable([t('cMember'), t('drC_to'), t('drC_offered'), t('drC_accepted'), t('drC_waited')], D.slow.map(s => [s.member, s.provider, tm(s.offeredAt), s.acceptedAt ? tm(s.acceptedAt) : t('drO_' + (s.outcome === 'waiting' ? 'waiting' : 'never')), dur(s.min)])), 'dr-bad'));
+  if(D.never.length) secs.push(drSection('never', t('drS_never'), t('drS_neverHelp'), D.never.length,
+    drTable([t('cMember'), t('drC_arrived')], D.never.map(n => [n.member, tm(n.arrivedAt)])), 'dr-bad'));
+  if(D.noPhoto.length) secs.push(drSection('photo', t('drS_photo'), t('drS_photoHelp'), D.noPhoto.length,
+    drTable([t('cProvider'), t('cIn'), t('drC_photo')], D.noPhoto.map(p => [p.name, p.inAt ? tm(p.inAt) : '', drPhoto(p.photo)])), 'dr-bad'));
+  if(D.locIssues.length) secs.push(drSection('loc', t('drS_loc'), '', D.locIssues.length,
+    drTable([t('cProvider'), t('cIn'), t('drC_loc')], D.locIssues.map(p => [p.name, p.inAt ? tm(p.inAt) : '', drGeo(p.geo)])), 'dr-bad'));
+  const need = secs.length ? `<h2 class="dr-group">${esc(t('drNeeds'))}</h2>${secs.join('')}` : `<p class="note">${esc(t('drAllGood'))}</p>`;
+  const good = D.endedSelf.length ? drSection('good', t('drS_good'), '', D.endedSelf.length,
+    `<p class="dr-names">${D.endedSelf.map(p => `<span class="pill pill-serving">${esc(p.name)}</span>`).join(' ')}</p>`, 'dr-good') : '';
+  const all = drSection('all', t('drS_all'), '', D.people.length,
+    drTable([t('cProvider')].concat(mode === 'hr' && !D.siteId ? [t('cSite')] : []).concat([t('cIn'), t('cOut'), t('drC_ended'), t('drC_members'), t('cWithM'), t('drC_photo'), t('drC_loc')]),
+      D.people.map(p => [p.name].concat(mode === 'hr' && !D.siteId ? [p.siteName] : []).concat([p.inAt ? tm(p.inAt) : '', p.outAt ? tm(p.outAt) : '', t(DR_ENDED[p.ended]), p.members.join(', ') || '–', dur(p.withMemberMin), drPhoto(p.photo), drGeo(p.geo)]))));
+  const dl = `<div class="dl no-print"><button class="btn btn-sm primary" data-act="drPrint">${esc(t('drPrint'))}</button><button class="btn btn-sm btn-line" data-act="drCsv">${esc(t('drCsv'))}</button></div>
+    <p class="muted dr-foot" style="font-size:13px">${esc(t('genBy', {who: whoLabel(), when: today() + ' ' + tm(Date.now())}))}. ${esc(t('phiNote'))}</p>`;
+  return `<main class="board dr-rep">${head}${title}${kpis}${glance}${need}${good}${all}${dl}</main>`;
+}
+async function drCsv(mode){
+  const B = drBuild(mode); if(B.loading) return;
+  const D = B.D;
+  const csv = DAYREP.csv(D, { cols: t('drCsvCols'), kind: k => t('kind_' + k), tm, ended: e => t(DR_ENDED[e]), h: m => hrs(m), photo: drPhoto, geo: drGeo });
+  const site = D.siteId || 'all';
+  await saveFile(`day-report_${site}_${D.date}.csv`, csv, {what:'day_report', format:'csv', rows:D.people.length, from:D.date, to:D.date, siteId:site});
+}
 /* ---------- reports (step 4) ---------- */
 function viewTabs(){
-  return `<div class="tabs" role="group" aria-label="${esc(t('tabSheets'))}"><button class="chipbtn" aria-pressed="${ui.view!=='reports'&&ui.view!=='vtrack'&&ui.view!=='eod'}" data-act="view" data-id="board">${esc(t('tabFloor'))}</button><button class="chipbtn" aria-pressed="${ui.view==='eod'}" data-act="view" data-id="eod">${esc(t('tabEod'))}</button><button class="chipbtn" aria-pressed="${ui.view==='reports'}" data-act="view" data-id="reports">${esc(t('tabSheets'))}</button><button class="chipbtn" aria-pressed="${ui.view==='vtrack'}" data-act="view" data-id="vtrack">${esc(t('tabVtrack'))}</button></div>`;
+  return `<div class="tabs" role="group" aria-label="${esc(t('tabSheets'))}"><button class="chipbtn" aria-pressed="${ui.view!=='reports'&&ui.view!=='vtrack'&&ui.view!=='eod'&&ui.view!=='day'}" data-act="view" data-id="board">${esc(t('tabFloor'))}</button><button class="chipbtn" aria-pressed="${ui.view==='eod'}" data-act="view" data-id="eod">${esc(t('tabEod'))}</button><button class="chipbtn" aria-pressed="${ui.view==='day'}" data-act="view" data-id="day">${esc(t('tabDay'))}</button><button class="chipbtn" aria-pressed="${ui.view==='reports'}" data-act="view" data-id="reports">${esc(t('tabSheets'))}</button><button class="chipbtn" aria-pressed="${ui.view==='vtrack'}" data-act="view" data-id="vtrack">${esc(t('tabVtrack'))}</button></div>`;
 }
 function repRange(r){
   const d = today();
@@ -4094,7 +4329,7 @@ function reportsView(mode){
     body = `${kpis}${warn}<div class="tabs" role="group">${tabs}</div>${r.tab==='weeks'?`<p class="muted" style="font-size:15px">${esc(t('rWeeksNote'))}</p>`:''}${r.tab==='attendance' ? attendanceHtml(R) : `<p class="scroll-hint">${esc(t('scrollHint'))}</p>${tableHtml(r.tab, R)}`}${dl}`;
   }
   const recent = (ui.dlLog||[]).slice(0,8);
-  const recentBox = `<section class="panel"><h2>${esc(t('recent'))}</h2>${recent.length ? `<ul class="recent">${recent.map(x => `<li class="num">${esc(t('recentRow',{when:fmtDay(E.dateKey(x.at))+' '+tm(x.at), who:x.who, what: x.what === 'report' ? t('dlWhat_report') : x.what === 'my' ? t('dlWhat_my') : x.what === 'vtrack' ? t('tabVtrack') : x.what === 'eod' ? t('eodPdfTitle') : x.what === 'payroll' ? t('payWhat') : x.what === 'payroll_sheet' ? t('paySheetTitle') : x.what === 'activity' ? t('alTitle') : x.what === 'payroll_adjustment' ? t('adjDl') : x.what === 'contractor' ? t('conTitle') : x.what === 'locations' ? t('geoTitle') : t(TAB_KEY[x.what]||'tTimesheet'), format:x.format.toUpperCase(), rows:x.rows}))}</li>`).join('')}</ul>` : `<p class="empty">${esc(t('recentNone'))}</p>`}</section>`;
+  const recentBox = `<section class="panel"><h2>${esc(t('recent'))}</h2>${recent.length ? `<ul class="recent">${recent.map(x => `<li class="num">${esc(t('recentRow',{when:fmtDay(E.dateKey(x.at))+' '+tm(x.at), who:x.who, what: x.what === 'report' ? t('dlWhat_report') : x.what === 'my' ? t('dlWhat_my') : x.what === 'vtrack' ? t('tabVtrack') : x.what === 'eod' ? t('eodPdfTitle') : x.what === 'payroll' ? t('payWhat') : x.what === 'payroll_sheet' ? t('paySheetTitle') : x.what === 'activity' ? t('alTitle') : x.what === 'payroll_adjustment' ? t('adjDl') : x.what === 'contractor' ? t('conTitle') : x.what === 'locations' ? t('geoTitle') : x.what === 'day_report' ? t('drTitle') : t(TAB_KEY[x.what]||'tTimesheet'), format:x.format.toUpperCase(), rows:x.rows}))}</li>`).join('')}</ul>` : `<p class="empty">${esc(t('recentNone'))}</p>`}</section>`;
   return `<main class="board">
     <div class="board-head"><h1>${esc(mode==='hr'?t('rHrTitle'):t('coordTitle'))}</h1>${sites}</div>
     ${mode==='coord' ? viewTabs() : hrTabs()}
@@ -4104,7 +4339,7 @@ function reportsView(mode){
   </main>`;
 }
 function hrTabs(){
-  return hrFirstRun() + `<div class="tabs" role="group" aria-label="${esc(t('tabSheets'))}"><button class="chipbtn" aria-pressed="${ui.view!=='payroll'&&ui.view!=='roster'&&ui.view!=='activity'}" data-act="view" data-id="reports">${esc(t('tabSheets'))}</button><button class="chipbtn" aria-pressed="${ui.view==='payroll'}" data-act="view" data-id="payroll">${esc(t('tabPayroll'))}</button><button class="chipbtn" aria-pressed="${ui.view==='roster'}" data-act="view" data-id="roster">${esc(t('tabRoster'))}</button><button class="chipbtn" aria-pressed="${ui.view==='activity'}" data-act="view" data-id="activity">${esc(t('tabActivity'))}</button></div>`;
+  return hrFirstRun() + `<div class="tabs" role="group" aria-label="${esc(t('tabSheets'))}"><button class="chipbtn" aria-pressed="${ui.view!=='payroll'&&ui.view!=='roster'&&ui.view!=='activity'&&ui.view!=='day'}" data-act="view" data-id="reports">${esc(t('tabSheets'))}</button><button class="chipbtn" aria-pressed="${ui.view==='day'}" data-act="view" data-id="day">${esc(t('tabDay'))}</button><button class="chipbtn" aria-pressed="${ui.view==='payroll'}" data-act="view" data-id="payroll">${esc(t('tabPayroll'))}</button><button class="chipbtn" aria-pressed="${ui.view==='roster'}" data-act="view" data-id="roster">${esc(t('tabRoster'))}</button><button class="chipbtn" aria-pressed="${ui.view==='activity'}" data-act="view" data-id="activity">${esc(t('tabActivity'))}</button></div>`;
 }
 /* ---------- T-14 activity log (HR only) ----------
    One list of what happened, newest first: engine events (clock-ins, offers, sign-offs...), downloads and changes to
@@ -5628,6 +5863,12 @@ document.addEventListener('click', async ev => {
     case 'payUnlock': await payLockToggle(false); break;
     case 'repTab': ui.rep.tab = d.id; render(); break;
     case 'repStatus': ui.rep.status = d.id; render(); break;
+    case 'drSite': drState('hr').siteId = d.id; render(); break;
+    case 'drDate': drState(ui.role === 'hr' ? 'hr' : 'coord').date = d.id; render(); break;
+    case 'drJump': { const el = document.getElementById('dr-' + d.id); if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); el.setAttribute('tabindex','-1'); el.focus({preventScroll:true}); } break; }
+    case 'drPrint': window.print(); break;
+    case 'drCsv': await drCsv(ui.role === 'hr' ? 'hr' : 'coord'); break;
+    case 'drFixes': ui.view = 'reports'; ui.rep = ui.rep || {period:'pay', providerId:'all', status:'all', tab:'timesheet', siteId:null}; ui.rep.status = 'attention'; ui.rep.tab = 'timesheet'; render(); window.scrollTo(0,0); break;
     case 'dlCsv': await downloadCsv(ui.role === 'hr' ? 'hr' : 'coord'); break;
     case 'dlPdf': await downloadPdf(ui.role === 'hr' ? 'hr' : ui.role === 'coordinator' ? 'coord' : 'provider', ui.role === 'provider' ? me() : null); break;
     case 'myOpen': ui.mytime = true; ui.rep = null; render(); window.scrollTo(0,0); break;
@@ -5788,6 +6029,7 @@ document.addEventListener('change', async ev => {
   if(ev.target && ev.target.id === 'geo-r' && GEOS.edit){ GEOS.edit.r = Number(ev.target.value) || 150; return; }
   const pk = ev.target && ev.target.dataset && ev.target.dataset.ps;
   if(pk){ ui.ps = ui.ps || {payAnchor: config.payAnchor, payLength: Number(config.payLength||14), payDate: config.payDate||''}; ui.ps[pk] = pk === 'payLength' ? Number(ev.target.value) : ev.target.value; render(); return; }
+  if(ev.target && ev.target.dataset && ev.target.dataset.dr === 'date' && ev.target.value){ drState(ui.role === 'hr' ? 'hr' : 'coord').date = ev.target.value > today() ? today() : ev.target.value; render(); return; }
   const rk = ev.target && ev.target.dataset && ev.target.dataset.rep;
   if(rk && ui.rep){ ui.rep[rk] = ev.target.value; if(rk === 'from' || rk === 'to') ui.rep.period = 'custom'; render(); return; }
   
