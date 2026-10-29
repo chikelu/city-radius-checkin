@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-nGldLeU1MFHOk8TW9A398B3PFHsd8y81fCQ3jPQg1F8=' 'sha256-iWs+cwvfGHN/MbGeY0OXeD8n9WBnxt/awMkYJsX3Bbw=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-E0FkMWmj8SimrZuhW6v0VmCXykpegx/jMBgSCFgp0vo=' 'sha256-G7iZh3akDTO0f5V06Gc5wGfxe8JXtK4XA+xFGc1QXYw=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -2304,8 +2304,10 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     return out;
   }
 
-  // T-43: a VTrack note is not done when Documentation says Add (not started) or the Errors column is not "none"
-  function noteNotDone(r) { return !!r && (String(r.documentation).toLowerCase() === 'add' || !!r.hasError); }
+  // T-43 (client rule, Oct 29): the Errors column decides. A note is done only when Errors says "none"; anything
+  // else (!!, blank, text) means not done. "Add"/"Update" under Documentation does not decide it. Only a log with no
+  // Errors column at all falls back to Documentation = "Add".
+  function noteNotDone(r) { return !!r && (r.errorsKnown ? !!r.hasError : String(r.documentation).toLowerCase() === 'add'); }
   function vtRow(rowNo, c, warnings) {
     var client = String(c.client || '').trim();
     var label = 'Row ' + rowNo;
@@ -2315,12 +2317,12 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     if (!timeOut && String(c.timeOut || '').trim()) warnings.push(label + ': unreadable Time Out "' + String(c.timeOut).trim() + '"');
     var service = String(c.service || '').trim();
     var errors = String(c.errors || '').trim();
-    var known = c.errors !== undefined && c.errors !== null || c.errorsCol === true;
+    var known = c.errorsCol === true || (c.errors !== undefined && c.errors !== null);
     return {
       rowNo: rowNo, client: client, timeIn: timeIn, timeOut: timeOut, service: service,
       serviceCode: serviceCodeOf(service), serviceKind: /2\s*:\s*1/.test(String(service || '')) ? 'special_2_1' : 'standard', oneOnOne: String(c.oneOnOne || '').trim(),
       provider: String(c.provider || '').trim(), documentation: String(c.documentation || '').trim(),
-      errors: errors, hasError: known && errors.toLowerCase() !== 'none'
+      errors: errors, errorsKnown: !!known, hasError: known && errors.toLowerCase() !== 'none'
     };
   }
 
@@ -2400,6 +2402,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       }
     }
     if (h < 0) { warnings.push('No header row with "Client" and "Time In" found'); return { date: date, location: location, rows: [], warnings: warnings }; }
+    if (date === null) warnings.push('No "Daily Attendance Log" date line was pasted, so the log is compared with today. Copy the whole page, including the title, to check another day.');
     var header = lines[h];
     var rest = lines.slice(h + 1);
     var cells = header.split('\t').map(function (s) { return s.trim(); }).filter(function (s, k, a) { return s || k < a.length - 1; });
@@ -2586,8 +2589,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     out.forEach(function (o) {
       var r = o.row;
       if (!r.provider) o.issues.push(issue('no_provider', 'review', r));
-      if (String(r.documentation).toLowerCase() === 'add') o.issues.push(issue('notes_not_started', 'review', r));
-      else if (r.hasError) o.issues.push(issue('notes_not_done', 'review', r, { errors: r.errors || '(blank)' }));
+      if (r.errorsKnown) { if (r.hasError) o.issues.push(issue('notes_not_done', 'review', r, { errors: r.errors || '(blank)' })); }
+      else if (String(r.documentation).toLowerCase() === 'add') o.issues.push(issue('notes_not_started', 'review', r));
     });
     out.forEach(function (o, i) {
       if (o.startAt === null) return;
@@ -2682,7 +2685,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
         if (Math.abs(aS - o.startAt) > tolMs || Math.abs(aE - o.endAt) > tolMs) {
           o.issues.push(issue('time_differs', 'review', r, { vtStart: hhmm(o.startAt), vtEnd: hhmm(o.endAt), appStart: hhmm(aS), appEnd: hhmm(aE) }));
         }
-        if (String(r.documentation).toLowerCase() === 'add' && o.appVisits.some(function (a) { return !!a.notesCompleted; })) {
+        if (noteNotDone(r) && o.appVisits.some(function (a) { return !!a.notesCompleted; })) {
           o.issues.push(issue('notes_mismatch', 'critical', r));
         }
       }
@@ -2764,7 +2767,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       if (e <= s) e = s + Q_MS;
       var pn = providerName(state, a.providerId);
       return { a: a, client: memberName(state, a.memberId), start: s, end: e, code: group ? 3 : 1,
-        provider: i % 2 === 1 ? pn.toUpperCase() : pn, doc: a.notesCompleted ? 'Update' : 'Add', errors: 'none' };
+        provider: i % 2 === 1 ? pn.toUpperCase() : pn, doc: a.notesCompleted ? 'Update' : 'Add', errors: a.notesCompleted ? 'none' : '!!' };
     });
     if (seed && rows.length) {
       if (rows.length > 1) rows = rows.slice(0, -1);                    // drop the last visit → app_only
@@ -3309,7 +3312,7 @@ en:{
   vtTabIssues:'Problems', vtTabProviders:'By provider', vtTabMembers:'By member', vtAll:'All', vtOnlyCritical:'Critical only', vtHideReviewed:'Hide reviewed',
   vtReviewed:'Reviewed', vtMarkReviewed:'Mark reviewed', vtRow:'Row {n}', vtNoIssues:'No problems found.',
   sev_critical:'Critical', sev_review:'Review', sev_info:'Info',
-  vtAssume:'Confirmed with the client: \u201cAdd\u201d means the progress note is not started and \u201cUpdate\u201d means it exists. A note is done only when the Errors column says \u201cnone\u201d; anything else (for example !!) means the note is not done. The \u201c- N\u201d at the end of the service is read as one provider to N members, and \u201cSpecial 2:1\u201d as two staff with one member.',
+  vtAssume:'Confirmed with the client: notes are judged by the Errors column only. \u201cnone\u201d means the note is done; anything else (for example !!) means it is not done. \u201cAdd\u201d or \u201cUpdate\u201d under Documentation does not decide it. The \u201c- N\u201d at the end of the service is read as one provider to N members, and \u201cSpecial 2:1\u201d as two staff with one member.',
   cvProvider:'Provider', cvRows:'Rows', cvVtTime:'VTrack time', cvAppTime:'App time', cvDiff:'Difference', cvGroup:'Most at once', cvAdd:'Notes not done', cvIssues:'Problems',
   cvRowNo:'Row', cvMember:'Member', cvVtSpan:'VTrack in–out', cvCode:'Service', cvDoc:'Note', cvApp:'App visits', noProviderName:'(no provider)',
   vtShowInfo:'Show name notes ({n})', vtNoneMatched:'None of these names are in the app yet, so only the VTrack checks can run. In the live app, staff and members are matched by their VTrack IDs.',
@@ -3336,7 +3339,7 @@ en:{
   vi_vtrack_only:'{member} is in VTrack ({start}–{end}) but has no visit in the app.',
   vi_provider_differs:'VTrack says {provider} served {member}. The app shows {app}.',
   vi_time_differs:'{member}: VTrack {vtStart}–{vtEnd}, app {appStart}–{appEnd}.',
-  vi_notes_mismatch:'{member}: notes ticked as done in the app, but VTrack shows the note not started.',
+  vi_notes_mismatch:'{member}: notes ticked as done in the app, but VTrack shows the note not done.',
   vi_provider_not_clocked_in:'{provider} is in VTrack with {member} but did not clock in on the app.',
   vi_app_only:'{member} had a visit in the app with {provider} ({start}–{end}) that is not in VTrack.',
   /* T-14 activity log (HR only) */
