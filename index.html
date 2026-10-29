@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-Vsh/NmezPbiVOErgZLZHj1kwacEt42Ff9Z6xrByz238=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-fW/ZLRAu4ZJtZG1HvamfUdKGIFMj1BfToI7HPupUOeY=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -3113,9 +3113,9 @@ en:{
   
   tabFloor:'Floor', tabSheets:'Timesheets', allSites:'All sites',
   rTitle:'Timesheets', rHrTitle:'Timesheets · all sites',
-  tabPayroll:'Payroll close (ADP)', payTitle:'Payroll close for ADP RUN', paySub:'Check the pay period, then download the file that ADP RUN imports. Only employees go in the file.',
+  tabPayroll:'Payroll close', payTitle:'Payroll close', paySub:'Check the pay period, then download the hours sheet and type the hours into payroll. Only employees go on the sheet.',
   payThis:'This pay period', payLast:'Last pay period', payPeriodLine:'Pay period {from} – {to}', payPaidOn:'Paid {pay}',
-  psTitle:'Pay schedule', psHelp:'Set this once from ADP RUN. Every report, the overtime week and the ADP file use it.',
+  psTitle:'Pay schedule', psHelp:'Set this once to match payroll. Every report, the overtime week and the hours sheet use it.',
   psStart:'First day of a pay period (a Sunday)', psLength:'How often', psWeekly:'Every week', psBiweekly:'Every 2 weeks',
   psPayDate:'Pay date for that period', psPayDateHelp:'The day employees are paid for the period that starts on the date above.',
   psPreview:'Next pay periods', psColPeriod:'Pay period', psColPay:'Pay date', psColNow:'Now',
@@ -3123,44 +3123,44 @@ en:{
   pse_bad_start:'Enter the first day of a pay period.', pse_bad_length:'Choose weekly or every 2 weeks.', pse_bad_paydate:'Enter a pay date.',
   pse_paydate_before_end:'The pay date is before that period ends. Check the dates.', pse_paydate_too_late:'The pay date is more than 3 weeks after the period ends. Check the dates.',
   pse_start_not_sunday:'The first day should be a Sunday so overtime weeks (Sunday to Saturday) line up with pay periods.',
-  payChecks:'Before you send to ADP', payCkVerified:'Every day is signed off or corrected', payCkVerifiedBad:'{n} day(s) still need a fix or a decision. Fix them in Timesheets → Needs attention.',
+  payChecks:'Before you close the period', payCkVerified:'Every day is signed off or corrected', payCkVerifiedBad:'{n} day(s) still need a fix or a decision. Fix them in Timesheets → Needs attention.',
   payCkOpen:'No one is still clocked in', payCkOpenBad:'{n} day(s) are still open (no sign-off yet).',
-  payCkIds:'Every employee has a Payroll ID', payCkIdsBad:'No Payroll ID for: {names}. Add the ADP employee ID to the staff list.',
+  payCkIds:'Every employee has a Payroll ID', payCkIdsBad:'No Payroll ID for: {names}. Add the payroll employee ID to the staff list.',
   payCkSettings:'ADP RUN settings are filled in', payCkSettingsBad:'Enter the company code below.',
-  payReady:'Ready to send', payNotReady:'Not ready yet',
-  payEmp:'Employees (go in the ADP file)', payCon:'Contractors (1099) — paid outside the ADP file',
+  payReady:'Ready to close', payNotReady:'Not ready yet',
+  payEmp:'Employees (on the hours sheet)', payCon:'Contractors (1099) — paid separately',
   conSub:'One line per contractor for this pay period, A–Z. Shows hours at work and hours with members so you can pay on either.',
   conCols:'Contractor|Site|Days|Hours at work|Hours with members|Visits|Units|Check', conTotals:'Totals', conCsv:'Contractor report (CSV)', conPdf:'Contractor report (PDF)',
   conTitle:'Contractor (1099) hours', conNone:'No contractor worked in this pay period.', conDraft:'DRAFT: some days are not verified or still open.',
   conN:'{n} contractors', conTable:'Contractor hours for this pay period',
-  pcName:'Name (last, first)', paySheetPdf:'ADP entry sheet (PDF)', paySheetCsv:'ADP entry sheet (CSV)', paySheetHelp:'A list you can read: every employee A–Z by last name, with Payroll ID and hours, plus the control totals. Use it to check the RUN preview or to type hours into RUN by hand.', paySheetTitle:'ADP entry sheet', paySheetPeriod:'Pay period {from} – {to}', paySheetPaid:'Paid {pay}', paySheetLocked:'Locked by {who} on {when}', paySheetDraft:'DRAFT: not every check is green yet', paySheetCols:'Employee (last, first)|Payroll ID|Regular hours|Overtime hours|Total hours', paySheetTotals:'Control totals', paySheetEmpN:'Employees: {n}', paySheetHash:'Payroll ID check sum: {n}', paySheetSign:'Checked by: ____________________   Date: ____________', pcId:'Payroll ID', pcReg:'Regular hours', pcOT:'Overtime hours', pcTotal:'Total hours', pcDays:'Days', pcCheck:'Check',
+  pcName:'Name (last, first)', paySheetPdf:'Hours sheet (PDF)', paySheetCsv:'Hours sheet (CSV)', paySheetHelp:'Every employee A–Z by last name, with Payroll ID and hours, plus the control totals. Type these hours into payroll, then check its totals against the control totals.', paySheetTitle:'Payroll hours sheet', paySheetPeriod:'Pay period {from} – {to}', paySheetPaid:'Paid {pay}', paySheetLocked:'Locked by {who} on {when}', paySheetDraft:'DRAFT: not every check is green yet', paySheetCols:'Employee (last, first)|Payroll ID|Regular hours|Overtime hours|Total hours', paySheetTotals:'Control totals', paySheetEmpN:'Employees: {n}', paySheetHash:'Payroll ID check sum: {n}', paySheetSign:'Checked by: ____________________   Date: ____________', pcId:'Payroll ID', pcReg:'Regular hours', pcOT:'Overtime hours', pcTotal:'Total hours', pcDays:'Days', pcCheck:'Check',
   pcMissing:'No Payroll ID', pcNotVer:'{n} not verified', pcOpen:'{n} open', pcOk:'OK',
   payNone:'No hours in this pay period.',
-  payControl:'Control totals', payControlHelp:'After you import the file, ADP RUN shows a preview. These numbers should match it.',
-  ctEmp:'Employees in file', ctReg:'Regular hours', ctOT:'Overtime hours', ctTotal:'Total hours', ctHash:'Payroll ID check sum',
+  payControl:'Control totals', payControlHelp:'After you type the hours into payroll, its totals should match these.',
+  ctEmp:'Employees on the sheet', ctReg:'Regular hours', ctOT:'Overtime hours', ctTotal:'Total hours', ctHash:'Payroll ID check sum',
   paySettings:'ADP RUN settings', paySettingsHelp:'From ADP RUN. Time Sheet Import must be turned on for your company.',
   psCompany:'Company code (IID)', psFreq:'Pay frequency', psReg:'Regular earnings code', psOT:'Overtime earnings code', psRate:'Rate code', psIdType:'ID column',
   psIdEmp:'Employee ID', psIdClock:'Time clock ID', freqW:'Weekly (W)', freqB:'Every two weeks (B)', freqS:'Twice a month (S)', freqM:'Monthly (M)',
   psSave:'Save settings', psSaved:'Settings saved',
-  payLock:'Lock this pay period', payLockHelp:'Locking saves these totals. The file will use the locked totals even if someone changes a day later.',
+  payLock:'Lock this pay period', payLockHelp:'Locking saves these totals. The hours sheet will use the locked totals even if someone changes a day later.',
   payLocked:'Locked by {who} on {when}', payUnlock:'Unlock', payLockedChanged:'Hours changed after the lock. Unlock and lock again to use the new hours.',
   payLockedOk:'Pay period locked', payUnlockedOk:'Pay period unlocked', payLockNeedReady:'You can lock only when every check is green.',
   payDl:'Download ADP RUN file (CSV)', payDlDraft:'Download draft file (not ready)', payDlNeedCode:'Enter the company code to download the file.',
   payDlHelp:'In ADP RUN: Payroll → Time Sheet Import → choose this file → check the preview against the control totals above.',
   payDraftNote:'Draft: do not import this into ADP until every check is green.',
-  payWhat:'ADP RUN file', payFixBtn:'Show the days to fix',
-  adjTitle:'Changes since this period was locked', adjHelp:'Someone changed a day after this pay period was locked. The locked file does not have these changes. Pay the difference in the next pay run.',
+  payWhat:'Hours sheet', payFixBtn:'Show the days to fix',
+  adjTitle:'Changes since this period was locked', adjHelp:'Someone changed a day after this pay period was locked. The locked hours sheet does not have these changes. Pay the difference in the next payroll.',
   adjColName:'Name', adjColBefore:'Before (total)', adjColNow:'Now (total)', adjColDiff:'Difference (reg / OT)',
   adjKindAdded:'New since the lock', adjKindRemoved:'No hours now',
-  adjTotals:'Total difference: {total} hours ({reg} regular, {ot} overtime)', adjPaidIn:'The adjustment file is for the next pay period: {from} – {to}.',
+  adjTotals:'Total difference: {total} hours ({reg} regular, {ot} overtime)', adjPaidIn:'Add these hours to the next pay period: {from} – {to}.',
   adjDl:'Download adjustment file (ADP RUN)', adjMark:'Mark changes as handled',
-  adjNegNote:'A minus sign means hours to take away. If ADP RUN does not accept negative hours in the file, type those hours in RUN by hand.',
+  adjNegNote:'A minus sign means hours to take away. Add or take away these hours in the next payroll.',
   adjMarkHelp:'After you add the adjustment to the next payroll, tap "Mark changes as handled". The lock will then use the new hours, and the change is kept in the list below.',
   adjMarkedOk:'Changes marked as handled', adjHistory:'Adjustments made', adjHistLine:'{when} · {who} · {n} person(s) · {hours} hours difference',
   pToday:'Today', pWeek:'This week', pPay:'This pay period', pLastPay:'Last pay period', pCustom:'Pick dates',
   rFrom:'From', rTo:'To', rProvider:'Provider', rAllProviders:'All providers', rStatus:'Show',
   sAll:'All days', sAttention:'Needs attention', sVerified:'Verified only',
-  rPeriod:'{from} – {to}', rPayNote:'Pay periods are 2 weeks starting {anchor}. Confirm this matches ADP.', rPayNote2:'Pay period {from} – {to}, paid {pay}.', rPayNoteNoDate:'Pay period {from} – {to}.',
+  rPeriod:'{from} – {to}', rPayNote:'Pay periods are 2 weeks starting {anchor}. Confirm this matches payroll.', rPayNote2:'Pay period {from} – {to}, paid {pay}.', rPayNoteNoDate:'Pay period {from} – {to}.',
   kProviders:'Providers', kDays:'Days', kWork:'Time at work', kService:'Time with members', kUnits:'Billing units', kUnverified:'Days not verified',
   rWarn:'{n} days are not verified yet. Fix them before running payroll.', rWarn1:'1 day is not verified yet. Fix it before running payroll.',
   rLoading:'Loading those dates…', rEmpty:'No timesheets for these dates and filters.',
@@ -3170,15 +3170,15 @@ en:{
   roColName:'Name', roColSite:'Site', roColType:'Type', roColPayroll:'Payroll ID', roColProgram:'Program', roColClient:'Client ID', roColStatus:'Status',
   roNone:'Nobody matches.', roCount:'{n} shown',
   roFormNewP:'New provider', roFormNewM:'New member', roFormEditP:'Edit provider', roFormEditM:'Edit member',
-  roFName:'Full name', roFSite:'Site', roFKind:'Type', roFPayroll:'Payroll ID (ADP employee ID)', roFPayrollHelp:'Letters and numbers only. Never enter a Social Security number.',
+  roFName:'Full name', roFSite:'Site', roFKind:'Type', roFPayroll:'Payroll ID (employee ID in payroll)', roFPayrollHelp:'Letters and numbers only. Never enter a Social Security number.',
   roFClient:'Client ID (from VTrack)', roFProgram:'Program', roFNoProgram:'Not set', roFVtrack:'VTrack ID (optional)',
   roSave:'Save', roCancel:'Cancel', roTurnOff:'Turn off', roTurnOn:'Turn back on', roSaved:'Saved', roTurnedOff:'{name} is turned off', roTurnedOn:'{name} is active again',
   roOffHelp:'Turned-off people cannot clock in or be checked in, and drop out of attendance. Their past hours stay in reports and payroll.',
   roChecks:'Things to fix', roChecksNone:'No problems found.',
   roe_name_required:'Enter a name.', roe_name_ssn:'This looks like a Social Security number. Enter the name only.', roe_site_required:'Choose a site.', roe_kind_invalid:'Choose employee or contractor.',
-  roe_payroll_ssn:'This looks like a Social Security number. Use the ADP employee ID instead.', roe_payroll_format:'Payroll ID can only have letters and numbers (up to 12).',
+  roe_payroll_ssn:'This looks like a Social Security number. Use the payroll employee ID instead.', roe_payroll_format:'Payroll ID can only have letters and numbers (up to 12).',
   roe_payroll_taken:'Another provider already has this Payroll ID.', roe_program_invalid:'Choose a program.', roe_client_ssn:'This looks like a Social Security number. Use the VTrack Client ID.', roe_client_taken:'Another member already has this Client ID.',
-  row_payroll_missing:'No Payroll ID yet. This employee will be left out of the ADP file.', row_same_name:'Someone else has the same name. Check it is not the same person.', row_client_missing:'No Client ID yet. The VTrack check matches by name only.',
+  row_payroll_missing:'No Payroll ID yet. This employee will be left out of the hours sheet.', row_same_name:'Someone else has the same name. Check it is not the same person.', row_client_missing:'No Client ID yet. The VTrack check matches by name only.',
   roi_payroll_missing:'No Payroll ID: {names}', roi_same_name:'Same name twice: {names}', roi_payroll_taken:'Same Payroll ID twice: {names}', roi_client_taken:'Same Client ID twice: {names}', roi_client_missing:'No Client ID: {names}',
   roImportP:'Add from a staff list (ADP or VTrack)', roImportM:'Add from the member list (VTrack)',
   roImportHelpP:'Paste the staff list from ADP (a CSV export is fine) or VTrack. It needs Last Name and First Name columns. The app keeps only name, location and Payroll ID (Employee ID or File number). SSN, phone and email are thrown away right away and never saved.',
@@ -3319,7 +3319,7 @@ en:{
   al_correctionDecided_approve:'{who} approved {provider}’s sign-off fix', al_correctionDecided_adjust:'{who} approved {provider}’s sign-off fix with a different time',
   al_correctionDecided_reject:'{who} did not approve {provider}’s sign-off fix', al_coordinatorCorrect:'{who} fixed {provider}’s sign-off', al_other:'{who} made a change',
   al_download:'{who} downloaded {what} ({format})', al_downloadRange:'{who} downloaded {what} ({format}, {range})',
-  alWhat_report:'the timesheet report', alWhat_my:'their own timesheet', alWhat_payroll:'the ADP RUN file', alWhat_payroll_sheet:'the ADP entry sheet',
+  alWhat_report:'the timesheet report', alWhat_my:'their own timesheet', alWhat_payroll:'the ADP RUN file', alWhat_payroll_sheet:'the payroll hours sheet',
   alWhat_payroll_adjustment:'the ADP adjustment file', alWhat_contractor:'the contractor hours report', alWhat_vtrack:'the VTrack check', alWhat_eod:'the end-of-day report', alWhat_activity:'the activity log',
   alWhat_timesheet:'the timesheet list', alWhat_weeks:'the week totals', alWhat_visits:'the visits list', alWhat_exceptions:'the exceptions list', alWhat_attendance:'the attendance list', alWhat_other:'a file',
   al_add_providers:'{who} added provider {name}', al_add_members:'{who} added member {name}', al_add_sites:'{who} added site {name}',
@@ -4647,12 +4647,11 @@ function payrollView(){
   const T = P.totals, C = T.checks, S = P.S;
   const settingsOk = !!String(S.companyCode||'').trim();
   const item = (ok, good, bad) => `<li class="ck ${ok?'ok':'todo'}"><span class="ck-ic">${ok?I.check:I.alert}</span><span><b>${esc(good)}</b>${ok?'':`<br><span class="muted">${esc(bad)}</span>`}</span></li>`;
-  const allOk = C.ready && settingsOk;
+  const allOk = C.ready;
   const checks = `<section class="panel"><h2>${esc(t('payChecks'))} <span class="pill ${allOk?'pill-serving':'pill-offer'}">${esc(allOk?t('payReady'):t('payNotReady'))}</span></h2><ul class="cklist">
     ${item(C.unverifiedDays===0, t('payCkVerified'), t('payCkVerifiedBad',{n:C.unverifiedDays}))}${C.unverifiedDays||C.openDays?`<li><button class="btn btn-sm primary" data-act="payFix">${esc(t('payFixBtn'))}</button></li>`:''}
     ${item(C.openDays===0, t('payCkOpen'), t('payCkOpenBad',{n:C.openDays}))}
     ${item(!C.missingIds.length, t('payCkIds'), t('payCkIdsBad',{names:C.missingIds.join(', ')}))}
-    ${item(settingsOk, t('payCkSettings'), t('payCkSettingsBad'))}
   </ul></section>`;
   const h2 = n => (Math.round((n||0)*100)/100).toFixed(2);
   const checkCell = o => !o.payrollId && o.kind === 'employee' ? t('pcMissing') : o.openDays ? t('pcOpen',{n:o.openDays}) : o.unverifiedDays ? t('pcNotVer',{n:o.unverifiedDays}) : t('pcOk');
@@ -4683,10 +4682,9 @@ function payrollView(){
     : `<p class="muted" style="font-size:15px">${esc(t('payLockHelp'))}</p><div class="row-actions"><button class="btn btn-sm btn-line" data-act="payLock" ${C.ready?'':'disabled'}>${esc(t('payLock'))}</button></div>${C.ready?'':`<p class="muted" style="font-size:15px">${esc(t('payLockNeedReady'))}</p>`}`;
   const canDl = settingsOk && (P.lock ? P.lock.employees.length : T.control.employees);
   const dl = `<section class="panel"><h2>${esc(t('payWhat'))}</h2>${lockBox}
-    <div class="dl"><button class="btn ${allOk?'btn-go':'btn-line'}" data-act="payDl" ${canDl?'':'disabled'}>${esc(allOk?t('payDl'):t('payDlDraft'))}</button><button class="btn btn-sm btn-line" data-act="paySheetPdf" ${(P.lock ? P.lock.employees.length : T.control.employees) ? '' : 'disabled'}>${esc(t('paySheetPdf'))}</button><button class="btn btn-sm btn-line" data-act="paySheetCsv" ${(P.lock ? P.lock.employees.length : T.control.employees) ? '' : 'disabled'}>${esc(t('paySheetCsv'))}</button>${dlAvail === false ? `<span class="muted" style="font-size:15px">${esc(t('dlNone'))}</span>` : ''}</div>
-    ${settingsOk?'':`<p class="muted" style="font-size:15px">${esc(t('payDlNeedCode'))}</p>`}
-    <p class="note">${esc(t('payDlHelp'))}</p><p class="muted" style="font-size:15px">${esc(t('paySheetHelp'))}</p></section>`;
-  return `<main class="board">${head}${checks}${emp}${con}${control}${payScheduleBox()}${settings}${dl}</main>`;
+    <div class="dl"><button class="btn ${allOk?'btn-go':'btn-sm btn-line'}" data-act="paySheetPdf" ${(P.lock ? P.lock.employees.length : T.control.employees) ? '' : 'disabled'}>${esc(t('paySheetPdf'))}</button><button class="btn btn-sm btn-line" data-act="paySheetCsv" ${(P.lock ? P.lock.employees.length : T.control.employees) ? '' : 'disabled'}>${esc(t('paySheetCsv'))}</button>${dlAvail === false ? `<span class="muted" style="font-size:15px">${esc(t('dlNone'))}</span>` : ''}</div>
+    <p class="muted" style="font-size:15px">${esc(t('paySheetHelp'))}</p></section>`;
+  return `<main class="board">${head}${checks}${emp}${con}${control}${payScheduleBox()}${dl}</main>`;
 }
 function payScheduleBox(){
   const d = ui.ps = ui.ps || {payAnchor: config.payAnchor || '2026-09-27', payLength: Number(config.payLength || 14), payDate: config.payDate || ''};
@@ -4730,8 +4728,7 @@ function payAdjustBox(P, settingsOk){
     <div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr><th scope="col">${esc(t('adjColName'))}</th><th scope="col">${esc(t('adjColBefore'))}</th><th scope="col">${esc(t('adjColNow'))}</th><th scope="col">${esc(t('adjColDiff'))}</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="num"><b>${esc(t('adjTotals',{total:sg(D.totals.totalDelta), reg:sg(D.totals.regDelta), ot:sg(D.totals.otDelta)}))}</b></p>
     <p>${esc(t('adjPaidIn',{from:fmtDay(N.from), to:fmtDay(N.to)}))}</p>
-    <div class="row-actions"><button class="btn btn-sm primary" data-act="payAdjDl" ${settingsOk?'':'disabled'}>${esc(t('adjDl'))}</button><button class="btn btn-sm btn-line" data-act="payAdjDone">${esc(t('adjMark'))}</button></div>
-    ${settingsOk?'':`<p class="muted" style="font-size:15px">${esc(t('payDlNeedCode'))}</p>`}
+    <div class="row-actions"><button class="btn btn-sm btn-line" data-act="payAdjDone">${esc(t('adjMark'))}</button></div>
     <p class="muted" style="font-size:15px">${esc(t('adjNegNote'))}</p>
     <p class="muted" style="font-size:15px">${esc(t('adjMarkHelp'))}</p></div>`;
 }
@@ -4809,7 +4806,7 @@ function paySheetSource(){
 async function paySheetCsv(){
   const x = paySheetSource(); if(!x) return;
   const csv = E.payrollEntrySheetCsv(x.src, {from:x.P.from, to:x.P.to, payDate:x.P.payDate});
-  await saveFile(`ADP-entry-sheet_${x.P.from}_to_${x.P.to}${x.P.totals.checks.ready || x.P.lock ? '' : '_DRAFT'}.csv`, csv, {what:'payroll_sheet', format:'csv', rows:x.emps.length, from:x.P.from, to:x.P.to, siteId:'all'});
+  await saveFile(`payroll-hours-sheet_${x.P.from}_to_${x.P.to}${x.P.totals.checks.ready || x.P.lock ? '' : '_DRAFT'}.csv`, csv, {what:'payroll_sheet', format:'csv', rows:x.emps.length, from:x.P.from, to:x.P.to, siteId:'all'});
 }
 async function paySheetPdf(){
   const x = paySheetSource(); if(!x) return;
@@ -4843,7 +4840,7 @@ async function paySheetPdf(){
     for(let i = 1; i <= n; i++){ doc.setPage(i); doc.setFontSize(8); doc.setTextColor(90); doc.text(t('genBy',{who:whoLabel(), when:today()+' '+tm(Date.now())}) + '.  ' + t('phiNote'), M, H - 30); doc.text(t('pageOf',{i, n}), W - M, H - 30, {align:'right'}); }
     buf = doc.output('arraybuffer');
   } finally { absDates = false; }
-  await saveFile(`ADP-entry-sheet_${P.from}_to_${P.to}${P.totals.checks.ready || P.lock ? '' : '_DRAFT'}.pdf`, buf, {what:'payroll_sheet', format:'pdf', rows:x.emps.length, from:P.from, to:P.to, siteId:'all'});
+  await saveFile(`payroll-hours-sheet_${P.from}_to_${P.to}${P.totals.checks.ready || P.lock ? '' : '_DRAFT'}.pdf`, buf, {what:'payroll_sheet', format:'pdf', rows:x.emps.length, from:P.from, to:P.to, siteId:'all'});
 }
 async function payDownload(){
   const P = payContext(); if(P.loading) return;
@@ -5619,11 +5616,9 @@ document.addEventListener('click', async ev => {
     case 'repSite': ui.rep.siteId = d.id; ui.rep.providerId = 'all'; render(); break;
     case 'repPeriod': ui.rep.period = d.id; render(); break;
     case 'payPeriod': ui.pay = ui.pay || {}; ui.pay.period = d.id; render(); break;
-    case 'payDl': await payDownload(); break;
     case 'psSave': await psSave(); break;
     case 'paySheetPdf': await paySheetPdf(); break;
     case 'paySheetCsv': await paySheetCsv(); break;
-    case 'payAdjDl': await payAdjustDownload(); break;
     case 'payAdjDone': await payAdjustHandled(); break;
     case 'roTab': case 'roAdd': case 'roEdit': case 'roCancel': case 'roSave': case 'roToggle': case 'roRead': case 'roPlanClear': case 'roApply': await roAct(d.act, d); break;
     case 'siAdd': case 'siEdit': case 'siCancel': case 'siSave': case 'siHolAdd': case 'siHolDel': await siAct(d.act, d); break;
