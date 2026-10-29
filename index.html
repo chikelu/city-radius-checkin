@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-AICq//3BNm9pXnxds7d75wp0s/TXDa6Abm9AqQabnk8=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-zD8mOpWaQhcieVCrl6alyfAqPnLVI33/XSa/06+WuDc=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -376,6 +376,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
 .dr-kpis button.count{font:inherit;text-align:left;cursor:pointer;color:inherit}
 .dr-hl li.dr-bad .ck-ic{color:var(--offer)}.dr-hl li.dr-good .ck-ic{color:var(--go)}
 .dr-group{margin:18px 0 6px;font-size:20px}.dr-sec.dr-bad{border-left:4px solid var(--offer-line)}.dr-sec.dr-good{border-left:4px solid var(--go)}
+.sheet .opt[hidden]{display:none}.sheet-q{margin:4px 0 8px}.sheet-q input{width:100%}
+.dr-act{white-space:nowrap}.dr-act .btn{min-height:44px}
 .dr-names{display:flex;flex-wrap:wrap;gap:6px;margin:0}.dr-h{margin:0 0 6px}.dr-sec .tbl th[scope=row]{font-weight:700;color:var(--ink);background:none;font-size:15px}
 .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
 @media (max-width:900px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -3116,6 +3118,8 @@ en:{
   /* step 4 */
   
   tabFloor:'Floor', tabSheets:'Timesheets', allSites:'All sites',
+  qProviders:'Search providers by name', qMembers:'Search members by name', qNone:'No one matches. Check the spelling.',
+  lnCol:'Fix it', lnDay:'Open day', lnDayOf:'Open {name}’s day on Timesheets', lnReviewOf:'Review {name}’s sign-off fix', lnFixOf:'Fix {name}’s sign-off', lnFloor:'Open Floor', lnFloorOf:'Find {name} on the Floor', lnVisits:'Open visits', lnVisitsOf:'Open the visits for that day ({name})', lnRoster:'Add Payroll ID: {name}', lnRosterOf:'Open {name} on the Roster to add a Payroll ID', lnAlready:'Already done. Someone has fixed this.', lnOld:'This day is older than the last 10 days. Open it from Timesheets.',
   tabDay:'Day report', drTitle:'Day report', drDay:'Day', drYesterday:'Yesterday', drFor:'{day} · {site}',
   drSub:'Who did what, by name. Tap a number to jump to the list.', drStillLoading:'Photos and locations are still loading.', drNone:'Nobody worked and no member came on this day.',
   drK_prov:'Providers worked', drK_mem:'Members came', drK_self:'Tapped End my day', drK_fixes:'Sign-off fixes waiting', drK_waits:'Members waited too long', drK_photo:'Clock-ins without a photo',
@@ -4011,7 +4015,7 @@ function providerFix(p){
       const mine = asg.filter(a => a.providerId === sh.providerId && a.acceptedAt != null);
       const t = ts[sh.providerId] || {};
       const pv = provs.find(p => p.id === sh.providerId) || {};
-      return { providerId: sh.providerId, name: pName(sh.providerId), kind: pv.kind || 'employee', siteName: sName(sh.siteId),
+      return { providerId: sh.providerId, shiftId: sh.id, correctionId: sh.correctionId || null, date: sh.date, name: pName(sh.providerId), kind: pv.kind || 'employee', siteName: sName(sh.siteId),
         inAt: sh.clockInAt, outAt: sh.signedOffAt || sh.clockOutAt || null, ended: ended(sh),
         members: Array.from(new Set(mine.map(a => mName(a.memberId)))), workMin: t.presenceMin || 0, withMemberMin: t.withMemberMin || 0,
         photo: photoOf(sh), geo: geoOf(sh) };
@@ -4021,20 +4025,20 @@ function providerFix(p){
     const waits = [], never = [];
     Object.keys(firstIn).forEach(m => {
       const offers = asg.filter(a => a.memberId === m && a.offeredAt != null).sort((a, b) => a.offeredAt - b.offeredAt);
-      if(!offers.length){ never.push({ member: mName(m), arrivedAt: firstIn[m] }); return; }
+      if(!offers.length){ never.push({ memberId: m, member: mName(m), arrivedAt: firstIn[m] }); return; }
       const w = mins(firstIn[m], offers[0].offeredAt);
-      if(w > DAYREP.WAIT_MIN) waits.push({ member: mName(m), arrivedAt: firstIn[m], offeredAt: offers[0].offeredAt, min: w, provider: pName(offers[0].providerId) });
+      if(w > DAYREP.WAIT_MIN) waits.push({ memberId: m, member: mName(m), arrivedAt: firstIn[m], offeredAt: offers[0].offeredAt, min: w, provider: pName(offers[0].providerId) });
     });
     const slow = asg.filter(a => a.offeredAt != null).map(a => {
       const until = a.acceptedAt != null ? a.acceptedAt : a.endedAt != null ? a.endedAt : (o.date === E.dateKey(now) ? now : null);
       if(until == null) return null;
       const m = mins(a.offeredAt, until);
-      return m > DAYREP.ACCEPT_MIN ? { member: mName(a.memberId), provider: pName(a.providerId), offeredAt: a.offeredAt, acceptedAt: a.acceptedAt || null,
+      return m > DAYREP.ACCEPT_MIN ? { memberId: a.memberId, member: mName(a.memberId), provider: pName(a.providerId), offeredAt: a.offeredAt, acceptedAt: a.acceptedAt || null,
         outcome: a.acceptedAt != null ? 'accepted' : a.status === 'offered' ? 'waiting' : a.status, min: m } : null;
     }).filter(Boolean);
     // fixes waiting for a decision: every day up to this one, oldest first
     const fixes = (data.corrections || []).filter(c => c.status === 'pending' && c.date <= date && (!site || c.siteId === site))
-      .map(c => ({ name: pName(c.providerId), date: c.date, reason: c.reason, submittedAt: c.submittedAt, endAt: c.claimedEndAt }))
+      .map(c => ({ id: c.id, shiftId: c.shiftId, providerId: c.providerId, name: pName(c.providerId), date: c.date, reason: c.reason, submittedAt: c.submittedAt, endAt: c.claimedEndAt }))
       .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.name.localeCompare(b.name));
     const by = k => people.filter(p => p.ended === k);
     const served = new Set(asg.filter(a => a.acceptedAt != null).map(a => a.memberId));
@@ -4119,7 +4123,43 @@ const DR_ENDED = { self: 'drE_self', auto: 'drE_auto', fix_sent: 'drE_fix', fixe
 function drPhoto(v){ return v == null ? '–' : t('drP_' + v); }
 function drGeo(v){ return v == null ? '–' : v === 'at_site' ? t('geoAt') : v === 'away' ? t('drG_away') : v === 'denied' ? t('geoDenied') : v === 'no_site' ? '–' : t('drG_none'); }
 function drTable(cols, rows){
-  return `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${cols.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => i === 0 ? `<th scope="row">${esc(c)}</th>` : `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${cols.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((c, i) => i === 0 ? `<th scope="row">${esc(c)}</th>` : c && c.html != null ? `<td class="dr-act">${c.html}</td>` : `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+// T-41: the button that takes a coordinator or HR straight to where a flagged item is fixed
+function fixLink(providerId, date, name){
+  const sh = (state.shifts||[]).find(x => x.providerId === providerId && x.date === date);
+  if(sh && sh.status === 'correction_pending' && sh.correctionId) return {html: `<button class="btn btn-sm primary" data-act="lnReview" data-id="${esc(sh.correctionId)}" aria-label="${esc(t('lnReviewOf',{name}))}">${esc(t('review'))}</button>`};
+  if(sh && sh.status === 'auto_signed_off') return {html: `<button class="btn btn-sm primary" data-act="lnFix" data-id="${esc(sh.id)}" aria-label="${esc(t('lnFixOf',{name}))}">${esc(t('fixMyself'))}</button>`};
+  return dayLink(providerId, date, name);
+}
+function dayLink(providerId, date, name){ return {html: `<button class="btn btn-sm btn-line" data-act="lnDay" data-id="${esc(providerId)}" data-date="${esc(date)}" aria-label="${esc(t('lnDayOf',{name}))}">${esc(t('lnDay'))}</button>`}; }
+function visitsLink(date, name){
+  return ui.role === 'coordinator' && date === today()
+    ? {html: `<button class="btn btn-sm btn-line" data-act="view" data-id="board" aria-label="${esc(t('lnFloorOf',{name}))}">${esc(t('lnFloor'))}</button>`}
+    : {html: `<button class="btn btn-sm btn-line" data-act="lnVisits" data-date="${esc(date)}" aria-label="${esc(t('lnVisitsOf',{name}))}">${esc(t('lnVisits'))}</button>`};
+}
+// T-42: search box on the Give lists. Matches the start of any word in the name ("mar" finds Margaret, not Omar).
+function qHit(name, q){
+  q = String(q || '').trim().toLowerCase(); if(!q) return true;
+  const n = String(name || '').toLowerCase();
+  return n.startsWith(q) || n.split(/[\s.'-]+/).some(w => w.startsWith(q));
+}
+function sheetSearch(sh, names, label){
+  if(names.length < 6) return '';
+  const none = !names.some(n => qHit(n, sh.q));
+  return `<div class="field sheet-q"><label for="sh-q">${esc(label)}</label><input id="sh-q" type="search" data-sheetq="1" value="${esc(sh.q||'')}" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="search"></div>
+    <p class="empty" id="sh-q-none" role="status"${none?'':' hidden'}>${esc(t('qNone'))}</p>`;
+}
+function sheetFilter(q){
+  const items = [...document.querySelectorAll('.sheet [data-qname]')];
+  let shown = 0; items.forEach(el => { const hit = qHit(el.dataset.qname, q); el.hidden = !hit; if(hit) shown++; });
+  const none = document.getElementById('sh-q-none'); if(none) none.hidden = shown > 0 || !items.length;
+}
+function lnOpenDay(providerId, date, tab){
+  ui.view = 'reports';
+  ui.rep = Object.assign(ui.rep || {}, {period:'custom', from:date, to:date, providerId: providerId || 'all', status:'all', tab: tab || 'timesheet'});
+  if(ui.role === 'hr'){ const p = (state.roster.providers||[]).find(x => x.id === providerId); ui.rep.siteId = providerId && p ? p.siteId : (drState('hr').siteId || 'all'); }
+  render(); window.scrollTo(0,0);
 }
 function drSection(id, title, help, n, inner, tone){
   return `<section class="panel dr-sec ${tone || ''}" id="dr-${id}"><h2>${esc(title)} <span class="muted num">${n}</span></h2>${help ? `<p class="muted" style="font-size:15px">${esc(help)}</p>` : ''}${inner}</section>`;
@@ -4153,28 +4193,28 @@ function dayReportView(mode){
   const glance = `<section class="panel"><h2>${esc(t('drGlance'))}</h2><ul class="cklist dr-hl">${hl}</ul></section>`;
   const secs = [];
   if(D.noEndMyDay.length) secs.push(drSection('noend', t('drS_noend'), t('drS_noendHelp'), D.noEndMyDay.length,
-    drTable([t('cProvider'), t('cIn'), t('drC_ended'), t('drC_next')], D.noEndMyDay.map(p => [p.name, p.inAt ? tm(p.inAt) : '', t(DR_ENDED[p.ended]), t(p.ended === 'auto' ? 'drN_needFix' : p.ended === 'fix_sent' ? 'drN_review' : 'drN_done')])), 'dr-bad'));
+    drTable([t('cProvider'), t('cIn'), t('drC_ended'), t('drC_next'), t('lnCol')], D.noEndMyDay.map(p => [p.name, p.inAt ? tm(p.inAt) : '', t(DR_ENDED[p.ended]), t(p.ended === 'auto' ? 'drN_needFix' : p.ended === 'fix_sent' ? 'drN_review' : 'drN_done'), fixLink(p.providerId, p.date, p.name)])), 'dr-bad'));
   if(D.stillIn.length) secs.push(drSection('in', t('drS_in'), '', D.stillIn.length,
-    drTable([t('cProvider'), t('cIn')], D.stillIn.map(p => [p.name, p.inAt ? tm(p.inAt) : ''])), 'dr-bad'));
+    drTable([t('cProvider'), t('cIn'), t('lnCol')], D.stillIn.map(p => [p.name, p.inAt ? tm(p.inAt) : '', dayLink(p.providerId, p.date, p.name)])), 'dr-bad'));
   if(D.fixes.length) secs.push(drSection('fixes', t('drS_fixes'), t('drS_fixesHelp'), D.fixes.length,
-    drTable([t('cProvider'), t('drC_day'), t('drC_reason'), t('drC_claim')], D.fixes.map(f => [f.name, fmtDay(f.date), t('cr_' + f.reason), f.endAt ? tm(f.endAt) : ''])) +
+    drTable([t('cProvider'), t('drC_day'), t('drC_reason'), t('drC_claim'), t('lnCol')], D.fixes.map(f => [f.name, fmtDay(f.date), t('cr_' + f.reason), f.endAt ? tm(f.endAt) : '', {html: `<button class="btn btn-sm primary" data-act="lnReview" data-id="${esc(f.id)}" aria-label="${esc(t('lnReviewOf',{name:f.name}))}">${esc(t('review'))}</button>`}])) +
     (mode === 'coord' ? `<div class="row-actions no-print"><button class="btn btn-sm primary" data-act="drFixes">${esc(t('drFixBtn'))}</button></div>` : ''), 'dr-bad'));
   if(D.waits.length) secs.push(drSection('waits', t('drS_waits', {min: DAYREP.WAIT_MIN}), '', D.waits.length,
-    drTable([t('cMember'), t('drC_arrived'), t('drC_offered'), t('drC_waited'), t('drC_to')], D.waits.map(w => [w.member, tm(w.arrivedAt), tm(w.offeredAt), dur(w.min), w.provider])), 'dr-bad'));
+    drTable([t('cMember'), t('drC_arrived'), t('drC_offered'), t('drC_waited'), t('drC_to'), t('lnCol')], D.waits.map(w => [w.member, tm(w.arrivedAt), tm(w.offeredAt), dur(w.min), w.provider, visitsLink(D.date, w.member)])), 'dr-bad'));
   if(D.slow.length) secs.push(drSection('slow', t('drS_slow', {min: DAYREP.ACCEPT_MIN}), t('drS_slowHelp'), D.slow.length,
-    drTable([t('cMember'), t('drC_to'), t('drC_offered'), t('drC_accepted'), t('drC_waited')], D.slow.map(s => [s.member, s.provider, tm(s.offeredAt), s.acceptedAt ? tm(s.acceptedAt) : t('drO_' + (s.outcome === 'waiting' ? 'waiting' : 'never')), dur(s.min)])), 'dr-bad'));
+    drTable([t('cMember'), t('drC_to'), t('drC_offered'), t('drC_accepted'), t('drC_waited'), t('lnCol')], D.slow.map(s => [s.member, s.provider, tm(s.offeredAt), s.acceptedAt ? tm(s.acceptedAt) : t('drO_' + (s.outcome === 'waiting' ? 'waiting' : 'never')), dur(s.min), visitsLink(D.date, s.member)])), 'dr-bad'));
   if(D.never.length) secs.push(drSection('never', t('drS_never'), t('drS_neverHelp'), D.never.length,
-    drTable([t('cMember'), t('drC_arrived')], D.never.map(n => [n.member, tm(n.arrivedAt)])), 'dr-bad'));
+    drTable([t('cMember'), t('drC_arrived'), t('lnCol')], D.never.map(n => [n.member, tm(n.arrivedAt), visitsLink(D.date, n.member)])), 'dr-bad'));
   if(D.noPhoto.length) secs.push(drSection('photo', t('drS_photo'), t('drS_photoHelp'), D.noPhoto.length,
-    drTable([t('cProvider'), t('cIn'), t('drC_photo')], D.noPhoto.map(p => [p.name, p.inAt ? tm(p.inAt) : '', drPhoto(p.photo)])), 'dr-bad'));
+    drTable([t('cProvider'), t('cIn'), t('drC_photo'), t('lnCol')], D.noPhoto.map(p => [p.name, p.inAt ? tm(p.inAt) : '', drPhoto(p.photo), dayLink(p.providerId, p.date, p.name)])), 'dr-bad'));
   if(D.locIssues.length) secs.push(drSection('loc', t('drS_loc'), '', D.locIssues.length,
-    drTable([t('cProvider'), t('cIn'), t('drC_loc')], D.locIssues.map(p => [p.name, p.inAt ? tm(p.inAt) : '', drGeo(p.geo)])), 'dr-bad'));
+    drTable([t('cProvider'), t('cIn'), t('drC_loc'), t('lnCol')], D.locIssues.map(p => [p.name, p.inAt ? tm(p.inAt) : '', drGeo(p.geo), dayLink(p.providerId, p.date, p.name)])), 'dr-bad'));
   const need = secs.length ? `<h2 class="dr-group">${esc(t('drNeeds'))}</h2>${secs.join('')}` : `<p class="note">${esc(t('drAllGood'))}</p>`;
   const good = D.endedSelf.length ? drSection('good', t('drS_good'), '', D.endedSelf.length,
     `<p class="dr-names">${D.endedSelf.map(p => `<span class="pill pill-serving">${esc(p.name)}</span>`).join(' ')}</p>`, 'dr-good') : '';
   const all = drSection('all', t('drS_all'), '', D.people.length,
-    drTable([t('cProvider')].concat(mode === 'hr' && !D.siteId ? [t('cSite')] : []).concat([t('cIn'), t('cOut'), t('drC_ended'), t('drC_members'), t('cWithM'), t('drC_photo'), t('drC_loc')]),
-      D.people.map(p => [p.name].concat(mode === 'hr' && !D.siteId ? [p.siteName] : []).concat([p.inAt ? tm(p.inAt) : '', p.outAt ? tm(p.outAt) : '', t(DR_ENDED[p.ended]), p.members.join(', ') || '–', dur(p.withMemberMin), drPhoto(p.photo), drGeo(p.geo)]))));
+    drTable([t('cProvider')].concat(mode === 'hr' && !D.siteId ? [t('cSite')] : []).concat([t('cIn'), t('cOut'), t('drC_ended'), t('drC_members'), t('cWithM'), t('drC_photo'), t('drC_loc'), t('lnCol')]),
+      D.people.map(p => [p.name].concat(mode === 'hr' && !D.siteId ? [p.siteName] : []).concat([p.inAt ? tm(p.inAt) : '', p.outAt ? tm(p.outAt) : '', t(DR_ENDED[p.ended]), p.members.join(', ') || '–', dur(p.withMemberMin), drPhoto(p.photo), drGeo(p.geo), p.ended === 'auto' || p.ended === 'fix_sent' ? fixLink(p.providerId, p.date, p.name) : dayLink(p.providerId, p.date, p.name)]))));
   const dl = `<div class="dl no-print"><button class="btn btn-sm primary" data-act="drPrint">${esc(t('drPrint'))}</button><button class="btn btn-sm btn-line" data-act="drCsv">${esc(t('drCsv'))}</button></div>
     <p class="muted dr-foot" style="font-size:13px">${esc(t('genBy', {who: whoLabel(), when: today() + ' ' + tm(Date.now())}))}. ${esc(t('phiNote'))}</p>`;
   return `<main class="board dr-rep">${head}${title}${kpis}${glance}${need}${good}${all}${dl}</main>`;
@@ -4290,7 +4330,8 @@ function tableHtml(tab, R){
   const flag = x => tab === 'timesheet' ? !x.verified : tab === 'weeks' ? x.unverifiedDays > 0 : false;
   const wrapCol = tab === 'exceptions' ? 4 : -1;
   const ph = tab === 'timesheet' && PHOTO.on;
-  return `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${HEADS[tab]().map(h=>`<th scope="col">${esc(h)}</th>`).join('')}${ph?`<th scope="col">${esc(t('phCol'))}</th>`:''}</tr></thead><tbody>${rows.map(x => `<tr class="${flag(x)?'flag':''}">${cells(x).map((c,i)=>`<td class="${i===wrapCol?'wrap':''}">${esc(c)}</td>`).join('')}${ph?`<td class="ph-cell">${photoThumb(x, x.providerName) || '–'}</td>`:''}</tr>`).join('')}</tbody></table></div>`;
+  const fx = tab === 'timesheet' && (ui.role === 'coordinator' || ui.role === 'hr') && rows.some(x => !x.verified && x.status !== 'open');
+  return `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${HEADS[tab]().map(h=>`<th scope="col">${esc(h)}</th>`).join('')}${ph?`<th scope="col">${esc(t('phCol'))}</th>`:''}${fx?`<th scope="col">${esc(t('lnCol'))}</th>`:''}</tr></thead><tbody>${rows.map(x => `<tr class="${flag(x)?'flag':''}">${cells(x).map((c,i)=>`<td class="${i===wrapCol?'wrap':''}">${esc(c)}</td>`).join('')}${ph?`<td class="ph-cell">${photoThumb(x, x.providerName) || '–'}</td>`:''}${fx?`<td class="dr-act">${x.verified || x.status === 'open' ? '' : (fixLink(x.providerId, x.date, x.providerName).html)}</td>`:''}</tr>`).join('')}</tbody></table></div>`;
 }
 function whoLabel(){ return ui.role === 'hr' ? t('whoHr') : ui.role === 'coordinator' ? t('whoCoord',{site:siteLabel(ui.siteId)}) : (me()||{}).name || ''; }
 function reportsView(mode){
@@ -4886,7 +4927,7 @@ function payrollView(){
   const checks = `<section class="panel"><h2>${esc(t('payChecks'))} <span class="pill ${allOk?'pill-serving':'pill-offer'}">${esc(allOk?t('payReady'):t('payNotReady'))}</span></h2><ul class="cklist">
     ${item(C.unverifiedDays===0, t('payCkVerified'), t('payCkVerifiedBad',{n:C.unverifiedDays}))}${C.unverifiedDays||C.openDays?`<li><button class="btn btn-sm primary" data-act="payFix">${esc(t('payFixBtn'))}</button></li>`:''}
     ${item(C.openDays===0, t('payCkOpen'), t('payCkOpenBad',{n:C.openDays}))}
-    ${item(!C.missingIds.length, t('payCkIds'), t('payCkIdsBad',{names:C.missingIds.join(', ')}))}
+    ${item(!C.missingIds.length, t('payCkIds'), t('payCkIdsBad',{names:C.missingIds.join(', ')}))}${C.missingIds.length ? `<li class="row-actions">${(state.roster.providers||[]).filter(p => C.missingIds.indexOf(p.name) >= 0 && !p.payrollId).map(p => `<button class="btn btn-sm primary" data-act="lnRoster" data-id="${esc(p.id)}" aria-label="${esc(t('lnRosterOf',{name:p.name}))}">${esc(t('lnRoster',{name:p.name}))}</button>`).join('')}</li>` : ''}
   </ul></section>`;
   const h2 = n => (Math.round((n||0)*100)/100).toFixed(2);
   const checkCell = o => !o.payrollId && o.kind === 'employee' ? t('pcMissing') : o.openDays ? t('pcOpen',{n:o.openDays}) : o.unverifiedDays ? t('pcNotVer',{n:o.unverifiedDays}) : t('pcOk');
@@ -5704,7 +5745,8 @@ function sheetBody(sh){
       + (E.staffNeedOf(m) === 2 ? ' ' + (sh.kind === 'assign' && others.length ? t('pairSecond',{first:f, provider:provider(others[0].providerId).name}) : t('pairNeeds',{first:f})) : '');
     return `<h2 id="sheet-h">${esc(t(sh.kind==='move'?'moveTitle':'assignTitle',{name:m.name}))}</h2>
       <p class="note">${esc(note)}</p>
-      ${opts.map(o => `<button class="opt" ${o.ok?'':'disabled'} data-act="${sh.kind==='move'?'moveDo':'assignDo'}" data-id="${esc(o.p.id)}"><span class="avatar">${esc(initials(o.p.name))}</span><span class="grow">${esc(o.p.name)}<small class="num">${esc(o.sub)}</small></span></button>`).join('')}
+      ${sheetSearch(sh, opts.map(o => o.p.name), t('qProviders'))}
+      ${opts.map(o => `<button class="opt" ${o.ok?'':'disabled'}${qHit(o.p.name, sh.q)?'':' hidden'} data-qname="${esc(o.p.name)}" data-act="${sh.kind==='move'?'moveDo':'assignDo'}" data-id="${esc(o.p.id)}"><span class="avatar">${esc(initials(o.p.name))}</span><span class="grow">${esc(o.p.name)}<small class="num">${esc(o.sub)}</small></span></button>`).join('')}
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
   }
   if(sh.kind === 'review'){
@@ -5764,7 +5806,8 @@ function sheetBody(sh){
     const ws = b.waiting.filter(w => (w.need === 2 ? w.open > 0 && !w.withNow.concat(w.offers||[]).some(a => a.providerId === sh.providerId) : !w.offer));
     return `<h2 id="sheet-h">${esc(t('pickMemberTitle',{name:p.name}))}</h2>
       <p class="note">${esc(t('assignNoteAny'))}</p>
-      ${ws.length ? ws.map(w => `<button class="opt" data-act="pickMemberDo" data-member="${esc(w.member.id)}"><span class="avatar">${esc(initials(w.member.name))}</span><span class="grow">${esc(w.member.name)}<small class="num">${esc(t('waitingFor',{dur:dur(w.waitMin)}))}${w.need === 2 ? ' · ' + esc(t('pairPill',{n:w.withNow.length})) : ''}</small></span></button>`).join('') : `<p class="empty">${esc(t('noneWaiting'))}</p>`}
+      ${ws.length ? sheetSearch(sh, ws.map(w => w.member.name), t('qMembers')) : ''}
+      ${ws.length ? ws.map(w => `<button class="opt"${qHit(w.member.name, sh.q)?'':' hidden'} data-qname="${esc(w.member.name)}" data-act="pickMemberDo" data-member="${esc(w.member.id)}"><span class="avatar">${esc(initials(w.member.name))}</span><span class="grow">${esc(w.member.name)}<small class="num">${esc(t('waitingFor',{dur:dur(w.waitMin)}))}${w.need === 2 ? ' · ' + esc(t('pairPill',{n:w.withNow.length})) : ''}</small></span></button>`).join('') : `<p class="empty">${esc(t('noneWaiting'))}</p>`}
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
   }
   return null;
@@ -5864,6 +5907,11 @@ document.addEventListener('click', async ev => {
     case 'repTab': ui.rep.tab = d.id; render(); break;
     case 'repStatus': ui.rep.status = d.id; render(); break;
     case 'drSite': drState('hr').siteId = d.id; render(); break;
+    case 'lnReview': { const c = corrById(d.id); if(!c){ toast(t('lnOld'), true); break; } if(c.status !== 'pending'){ toast(t('lnAlready')); render(); break; } ui.sheet = {kind:'review', correctionId:d.id}; render(); break; }
+    case 'lnFix': { const sh = shiftById(d.id); if(!sh){ toast(t('lnOld'), true); break; } if(sh.status !== 'auto_signed_off'){ toast(t('lnAlready')); render(); break; } ui.sheet = {kind:'cf', shiftId:d.id}; render(); break; }
+    case 'lnDay': lnOpenDay(d.id, d.date, 'timesheet'); break;
+    case 'lnVisits': lnOpenDay(null, d.date, 'visits'); break;
+    case 'lnRoster': { ui.view = 'roster'; const r = rosterState(); r.tab = 'providers'; render(); await roAct('roEdit', {id: d.id}); break; }
     case 'drDate': drState(ui.role === 'hr' ? 'hr' : 'coord').date = d.id; render(); break;
     case 'drJump': { const el = document.getElementById('dr-' + d.id); if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); el.setAttribute('tabindex','-1'); el.focus({preventScroll:true}); } break; }
     case 'drPrint': window.print(); break;
@@ -5997,6 +6045,7 @@ document.addEventListener('click', async ev => {
 });
 document.addEventListener('input', ev => {
   if(ev.target && ev.target.dataset && ev.target.dataset.rf && ui.ro && ui.ro.edit){ ui.ro.edit.rec[ev.target.dataset.rf] = ev.target.value; return; }
+  if(ev.target && ev.target.dataset && ev.target.dataset.sheetq){ if(ui.sheet) ui.sheet.q = ev.target.value; sheetFilter(ev.target.value); return; }
   if(ev.target && ev.target.dataset && ev.target.dataset.pickq){ ui.pickQ = ev.target.value; clearTimeout(window.__roQ); window.__roQ = setTimeout(() => { window.__roForce = 'pick-q'; draw(); }, 200); return; }
   if(ev.target && ev.target.dataset && ev.target.dataset.al === 'q' && ui.role === 'hr'){ alState().q = ev.target.value; alState().shown = AL.PAGE; clearTimeout(window.__roQ); window.__roQ = setTimeout(() => { window.__roForce = 'al-q'; draw(); }, 250); return; }
   if(ev.target && ev.target.id === 'geo-pt' && GEOS.edit){ GEOS.edit.pt = ev.target.value; return; }
