@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TgiiUKzDuD662UI3WBE9jO+hoVKNkCtJGNkea9pVBYc=' 'sha256-zD8mOpWaQhcieVCrl6alyfAqPnLVI33/XSa/06+WuDc=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-nGldLeU1MFHOk8TW9A398B3PFHsd8y81fCQ3jPQg1F8=' 'sha256-iWs+cwvfGHN/MbGeY0OXeD8n9WBnxt/awMkYJsX3Bbw=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -2304,6 +2304,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     return out;
   }
 
+  // T-43: a VTrack note is not done when Documentation says Add (not started) or the Errors column is not "none"
+  function noteNotDone(r) { return !!r && (String(r.documentation).toLowerCase() === 'add' || !!r.hasError); }
   function vtRow(rowNo, c, warnings) {
     var client = String(c.client || '').trim();
     var label = 'Row ' + rowNo;
@@ -2313,11 +2315,12 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     if (!timeOut && String(c.timeOut || '').trim()) warnings.push(label + ': unreadable Time Out "' + String(c.timeOut).trim() + '"');
     var service = String(c.service || '').trim();
     var errors = String(c.errors || '').trim();
+    var known = c.errors !== undefined && c.errors !== null || c.errorsCol === true;
     return {
       rowNo: rowNo, client: client, timeIn: timeIn, timeOut: timeOut, service: service,
       serviceCode: serviceCodeOf(service), serviceKind: /2\s*:\s*1/.test(String(service || '')) ? 'special_2_1' : 'standard', oneOnOne: String(c.oneOnOne || '').trim(),
       provider: String(c.provider || '').trim(), documentation: String(c.documentation || '').trim(),
-      errors: errors, hasError: errors !== '' && errors.toLowerCase() !== 'none'
+      errors: errors, hasError: known && errors.toLowerCase() !== 'none'
     };
   }
 
@@ -2342,10 +2345,11 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
         if (before.length >= 7) { c.oneOnOne = before[5]; c.provider = before[6]; } else { c.oneOnOne = ''; c.provider = before[5]; }
         c.documentation = after[0];
         c.errors = after[1] === 'Details' ? after[2] : after[1];
+        c.errorsCol = true;
       } else {
         warnings.push('Row ' + rowNo + ': no "Schedule" cell, columns read by position');
         c = { client: cells[1], timeIn: cells[2], timeOut: cells[3], service: cells[4], oneOnOne: cells[5],
-          provider: cells[6], documentation: cells[8], errors: cells[10] };
+          provider: cells[6], documentation: cells[8], errors: cells[10], errorsCol: true };
       }
       var r = vtRow(rowNo, c, warnings);
       if (r) rows.push(r);
@@ -2358,6 +2362,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     var head = readDelimited(headerLine, delim)[0] || [];
     var map = head.map(function (h) { var k = colKey(h); return Object.prototype.hasOwnProperty.call(VT_COLS, k) ? VT_COLS[k] : null; });
     if (map.indexOf('client') < 0) { warnings.push('Header has no Client column'); return []; }
+    var hasErrCol = map.indexOf('errors') >= 0;
+    if (!hasErrCol) warnings.push('No Errors column: notes are checked by Documentation only (Add = not started)');
     var rows = [], n = 0;
     readDelimited(rest.join('\n'), delim).forEach(function (cells, i) {
       if (!cells.some(function (s) { return String(s).trim(); })) return;
@@ -2366,6 +2372,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       var off = cells.length === head.length + 1 && map.indexOf('rowNo') < 0 && /^\s*\d+\s*$/.test(cells[0]) ? 1 : 0;
       if (off) c.rowNo = cells[0];
       map.forEach(function (k, j) { if (k) c[k] = cells[j + off]; });
+      if (hasErrCol) c.errorsCol = true;
       var rowNo = parseInt(c.rowNo, 10);
       if (!isFinite(rowNo)) rowNo = n;
       if (cells.length < map.indexOf('client') + 1) { warnings.push('Row ' + rowNo + ': too few cells, row skipped'); return; }
@@ -2398,7 +2405,9 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     var cells = header.split('\t').map(function (s) { return s.trim(); }).filter(function (s, k, a) { return s || k < a.length - 1; });
     var pasted = header.indexOf('\t') >= 0 && cells.length === VT_HEADER.length &&
       cells.every(function (s, k) { return colKey(s) === colKey(VT_HEADER[k]); });
-    var rows = pasted ? parsePasted(rest, warnings) : parseColumns(header, rest, warnings);
+    // a VTrack screen copy: numbered rows each followed by a "Schedule" line, whatever the header looks like
+    var shaped = header.indexOf('\t') >= 0 && rest.some(function (s) { return /^\s*\d+\t/.test(s); }) && rest.some(function (s) { return /^\s*Schedule\b/.test(s); });
+    var rows = pasted || shaped ? parsePasted(rest, warnings) : parseColumns(header, rest, warnings);
     if (pasted && !rows.length && rest.some(function (s) { return s.trim(); })) rows = parseColumns(header, rest, warnings);
     return { date: date, location: location, rows: rows, warnings: warnings };
   }
@@ -2492,7 +2501,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
         seenOn(p, d.date);
         p.vtRows++;
         p.vtrackMinutes += o.minutes;
-        if (String(o.row.documentation).toLowerCase() === 'add') p.missingNotes++;
+        if (noteNotDone(o.row)) p.missingNotes++;
         if (!p.payrollId && o.staff && o.staff.payrollId) p.payrollId = o.staff.payrollId;
         if (o.provider && !appCounted[k]) {
           appCounted[k] = true;
@@ -2578,7 +2587,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       var r = o.row;
       if (!r.provider) o.issues.push(issue('no_provider', 'review', r));
       if (String(r.documentation).toLowerCase() === 'add') o.issues.push(issue('notes_not_started', 'review', r));
-      if (r.hasError) o.issues.push(issue('vtrack_warning', 'review', r, { errors: r.errors }));
+      else if (r.hasError) o.issues.push(issue('notes_not_done', 'review', r, { errors: r.errors || '(blank)' }));
     });
     out.forEach(function (o, i) {
       if (o.startAt === null) return;
@@ -2704,7 +2713,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
         var mk = nameKey(o.row.client);
         if (!seen[mk]) { seen[mk] = true; members.push(o.member ? o.member.name : o.row.client); }
         vtMin += o.minutes;
-        if (String(o.row.documentation).toLowerCase() === 'add') notesAdd++;
+        if (noteNotDone(o.row)) notesAdd++;
         nIssues += o.issues.length;
         if (o.maxGroup !== null && (maxGroup === null || o.maxGroup > maxGroup)) maxGroup = o.maxGroup;
       });
@@ -2806,6 +2815,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
   var E = {
     CONFIG: CONFIG,
     parseVtrackLog: parseVtrackLog,
+    noteNotDone: noteNotDone,
     parseVtrackLogs: parseVtrackLogs,
     vtrackCompareRange: vtrackCompareRange,
     nameKey: nameKey,
@@ -3282,7 +3292,7 @@ en:{
   vtrDayWarn:'{day}: {w}', vtrSkipped:'{n} logs were left out: no date was found, or the same day was pasted twice.',
   kDays:'Days checked', vtrDaysTitle:'By day', vtrProvTitle:'By provider (A–Z)',
   vtrColDate:'Date', vtrColLoc:'Location', vtrColRows:'Rows', vtrColCritical:'Critical', vtrColReview:'To check',
-  vtrColProvider:'Provider', vtrColDays:'Days', vtrColApp:'Hours in app', vtrColVt:'Hours in VTrack', vtrColNotes:'Notes not started', vtrColProblems:'Problems', vtrColMore:'Details',
+  vtrColProvider:'Provider', vtrColDays:'Days', vtrColApp:'Hours in app', vtrColVt:'Hours in VTrack', vtrColNotes:'Notes not done', vtrColProblems:'Problems', vtrColMore:'Details',
   vtrProblems:'{c} critical · {r} to check', vtrNone:'None',
   vtrShow:'Show details', vtrHide:'Hide details', vtrDetailsTitle:'Problems for {name}', vtrNoDetails:'No problems for this provider.',
   vtrMissingTitle:'Days with no VTrack log in the pay period {from} to {to}', vtrMissingNone:'Every work day so far in this pay period has a log.',
@@ -3299,8 +3309,8 @@ en:{
   vtTabIssues:'Problems', vtTabProviders:'By provider', vtTabMembers:'By member', vtAll:'All', vtOnlyCritical:'Critical only', vtHideReviewed:'Hide reviewed',
   vtReviewed:'Reviewed', vtMarkReviewed:'Mark reviewed', vtRow:'Row {n}', vtNoIssues:'No problems found.',
   sev_critical:'Critical', sev_review:'Review', sev_info:'Info',
-  vtAssume:'Confirmed with the client: \u201cAdd\u201d means the progress note is not started and \u201cUpdate\u201d means it exists. The \u201c- N\u201d at the end of the service is read as one provider to N members, and \u201cSpecial 2:1\u201d as two staff with one member.',
-  cvProvider:'Provider', cvRows:'Rows', cvVtTime:'VTrack time', cvAppTime:'App time', cvDiff:'Difference', cvGroup:'Most at once', cvAdd:'Notes not started', cvIssues:'Problems',
+  vtAssume:'Confirmed with the client: \u201cAdd\u201d means the progress note is not started and \u201cUpdate\u201d means it exists. A note is done only when the Errors column says \u201cnone\u201d; anything else (for example !!) means the note is not done. The \u201c- N\u201d at the end of the service is read as one provider to N members, and \u201cSpecial 2:1\u201d as two staff with one member.',
+  cvProvider:'Provider', cvRows:'Rows', cvVtTime:'VTrack time', cvAppTime:'App time', cvDiff:'Difference', cvGroup:'Most at once', cvAdd:'Notes not done', cvIssues:'Problems',
   cvRowNo:'Row', cvMember:'Member', cvVtSpan:'VTrack in–out', cvCode:'Service', cvDoc:'Note', cvApp:'App visits', noProviderName:'(no provider)',
   vtShowInfo:'Show name notes ({n})', vtNoneMatched:'None of these names are in the app yet, so only the VTrack checks can run. In the live app, staff and members are matched by their VTrack IDs.',
   vi_not_on_client_list:'{member} is not on the VTrack member list you added. Check the spelling or the list.',
@@ -3316,6 +3326,7 @@ en:{
   vtDl:'Download problems as CSV', vtDone:'Checked. {c} critical, {r} to review.',
   vi_no_provider:'No provider recorded for {member} ({start}–{end}).',
   vi_notes_not_started:'Progress note not started in VTrack (“Add”) for {member}.',
+  vi_notes_not_done:'Progress note not done for {member}: the VTrack Errors column says “{errors}”, not “none”.', kNotes:'Notes not done', vtErrCell:'Errors: {errors}',
   vi_vtrack_warning:'VTrack flagged an error (!!) on {member}\u2019s row, usually a missing note.',
   vi_member_overlap:'{member} has two rows that overlap (rows {row} and {other}).',
   vi_ratio_mismatch:'{member}: billed as 1 to {code} (\u201c- {code}\u201d), but {provider} had {group} at once.',
@@ -5223,7 +5234,8 @@ function vtrackView(){
       <div class="count"><b class="num">${R.counts.rows}</b><span>${esc(t('kRows'))}</span></div>
       <div class="count"><b class="num">${R.counts.matchedMembers}</b><span>${esc(t('kMatched'))}</span></div>
       <div class="count${crit?' hot':''}"><b class="num">${crit}</b><span>${esc(t('kCritical'))}</span></div>
-      <div class="count"><b class="num">${rev}</b><span>${esc(t('kReview'))}</span></div></div>`;
+      <div class="count"><b class="num">${rev}</b><span>${esc(t('kReview'))}</span></div>
+      <div class="count${R.rows.filter(o => E.noteNotDone(o.row)).length?' hot':''}"><b class="num">${R.rows.filter(o => E.noteNotDone(o.row)).length}</b><span>${esc(t('kNotes'))}</span></div></div>`;
     const tabs = ['issues','providers','members'].map(k => `<button class="chipbtn" aria-pressed="${vt.tab===k}" data-act="vtTab" data-id="${k}">${esc(t({issues:'vtTabIssues',providers:'vtTabProviders',members:'vtTabMembers'}[k]))}</button>`).join('');
     let content;
     if(vt.tab === 'issues'){
@@ -5241,7 +5253,7 @@ function vtrackView(){
     } else if(vt.tab === 'providers'){
       content = `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${['cvProvider','cvPayroll','cvRows','cvVtTime','cvAppTime','cvDiff','cvGroup','cvAdd','cvIssues'].map(k=>`<th>${esc(t(k))}</th>`).join('')}</tr></thead><tbody>${R.providers.map(pv => `<tr class="${pv.issues?'flag':''}"><td>${esc(pv.name || t('noProviderName'))}</td><td>${esc(((R.rows.find(o => o.staff && E.nameKey(o.row.provider) === E.nameKey(pv.name)) || {}).staff || {}).payrollId || '\u2013')}</td><td>${pv.vtRows}</td><td>${esc(dur(pv.vtMinutes))}</td><td>${pv.provider ? esc(dur(pv.appMinutes)) : '–'}</td><td>${pv.provider ? esc((pv.appMinutes - pv.vtMinutes >= 0 ? '+' : '−') + dur(Math.abs(pv.appMinutes - pv.vtMinutes))) : '–'}</td><td>${pv.maxGroup || '–'}</td><td>${pv.notesAdd}</td><td>${pv.issues}</td></tr>`).join('')}</tbody></table></div>`;
     } else {
-      content = `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${['cvRowNo','cvMember','cvClientId','cvVtSpan','cvProvider','cvCode','cvDoc','cvApp','cvIssues'].map(k=>`<th>${esc(t(k))}</th>`).join('')}</tr></thead><tbody>${R.rows.map(o => `<tr class="${o.issues.length?'flag':''}"><td>${o.row.rowNo}</td><td>${esc(o.row.client)}</td><td>${esc(o.clientId||'\u2013')}</td><td>${esc(fmtHm(o.row.timeIn))} – ${esc(fmtHm(o.row.timeOut))}</td><td>${esc(o.row.provider || t('noProviderName'))}</td><td>${o.row.serviceCode != null ? '- ' + o.row.serviceCode : ''}</td><td>${esc(o.row.documentation)}</td><td>${o.appVisits.length ? o.appVisits.map(a => esc(tm(a.acceptedAt)) + '–' + (a.endedAt ? esc(tm(a.endedAt)) : '…')).join(', ') : '–'}</td><td>${o.issues.length}</td></tr>`).join('')}</tbody></table></div>`;
+      content = `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${['cvRowNo','cvMember','cvClientId','cvVtSpan','cvProvider','cvCode','cvDoc','cvApp','cvIssues'].map(k=>`<th>${esc(t(k))}</th>`).join('')}</tr></thead><tbody>${R.rows.map(o => `<tr class="${o.issues.length?'flag':''}"><td>${o.row.rowNo}</td><td>${esc(o.row.client)}</td><td>${esc(o.clientId||'\u2013')}</td><td>${esc(fmtHm(o.row.timeIn))} – ${esc(fmtHm(o.row.timeOut))}</td><td>${esc(o.row.provider || t('noProviderName'))}</td><td>${o.row.serviceCode != null ? '- ' + o.row.serviceCode : ''}</td><td>${esc(o.row.documentation)}${o.row.hasError ? ` <span class="pill pill-offer">${esc(t('vtErrCell',{errors:o.row.errors||'(blank)'}))}</span>` : ''}</td><td>${o.appVisits.length ? o.appVisits.map(a => esc(tm(a.acceptedAt)) + '–' + (a.endedAt ? esc(tm(a.endedAt)) : '…')).join(', ') : '–'}</td><td>${o.issues.length}</td></tr>`).join('')}</tbody></table></div>`;
     }
     body = `<section class="panel">${read}<div class="row-actions"><span class="group-label" style="margin:0">${esc(t('vtCompareWith'))}:</span>${sites}</div></section>
       ${kpis}<div class="tabs" role="group">${tabs}</div><p class="scroll-hint">${esc(t('scrollHint'))}</p>${content}
