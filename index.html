@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TdzTF7KKc0bOKzdtjyw9SoSirruICiD0T99MtDBoyNY=' 'sha256-8kqIJnoXU9ygvM40B21NE2IqdsROZIA7zXOMClERpD0=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TdzTF7KKc0bOKzdtjyw9SoSirruICiD0T99MtDBoyNY=' 'sha256-aDizbmCNbxu+G/9WeUQfdZU3sSr4R9BLkaYsLYCr5LE=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -217,6 +217,35 @@ button.count:hover{border-color:var(--ink)}
 .alerts{display:flex;flex-direction:column;gap:8px}
 .alert{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--alert-bg);border-left:6px solid var(--alert);border-radius:var(--r-sm);padding:10px 12px}
 .alert p{flex:1 1 260px;font-size:17px;font-weight:600}
+.fl-tabs{display:none}
+.fl-past{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--alert-bg);border-left:6px solid var(--alert);border-radius:var(--r-sm);padding:10px 12px}
+.fl-past p{flex:1 1 220px;font-size:17px;margin:0}
+.fl-sec[data-fl=fix]:not(.fl-fix-top){display:none}
+.fl-off>summary{cursor:pointer;font-weight:700;padding:6px 0}
+.fl-off[open]>summary{margin-bottom:8px}
+@media (max-width:899px){
+  .fl-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0;margin:0 -2px}
+  .fl-tab{min-height:48px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r-sm);font:inherit;font-size:15px;font-weight:700;padding:4px 2px;line-height:1.15}
+  .fl-tab .num{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .fl-tab.hot .num{color:var(--offer)}
+  .fl-tab[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .fl-tab[aria-selected=true] .num{color:inherit}
+  .fl-tab:focus-visible{outline:3px solid var(--focus,#1a5fd0);outline-offset:2px}
+  .fl-body .fl-sec{display:none}
+  .fl-on-wait .fl-sec[data-fl=wait],.fl-on-prov .fl-sec[data-fl=prov],.fl-on-fix .fl-sec[data-fl=fix],.fl-on-log .fl-sec[data-fl=log]{display:flex}
+  .fl-body .cols{gap:0}
+  .fl-urgent .alert p{font-size:16px}
+  .log{max-height:none}
+  .board .counts{gap:6px}
+  .board .counts .count{padding:8px 10px;display:flex;align-items:baseline;gap:8px;text-align:left}
+  .board .counts .count b{font-size:22px;flex:0 0 auto}
+  .board .counts .count span{font-size:13px;line-height:1.2}
+  #fl-wait .row{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;padding:10px}
+  #fl-wait .row-top{flex:1 1 150px}
+  #fl-wait .row .meta,#fl-wait .row .declined{flex:1 1 100%;order:3}
+  #fl-wait .row-actions{flex:0 0 auto}
+  #fl-prov .row{padding:10px;gap:8px}
+}
 .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:16px;align-items:start}
 @media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -3152,6 +3181,7 @@ en:{
   
   tabFloor:'Floor', tabSheets:'Timesheets', allSites:'All sites',
   qProviders:'Search providers by name', qMembers:'Search members by name', qNone:'No one matches. Check the spelling.',
+  flTWait:'Waiting', flTProv:'Providers', flTLog:'Activity', flFix:'To fix', flFixNone:'Nothing to fix.', flTabsLabel:'Floor sections', flNotWorking:'Not working now ({n})', flNobodyIn:'No provider is clocked in yet.', flLogMore:'Show {n} earlier', flPast:'{n} sign-off fix(es) from earlier days', flPastOldest:'oldest {day}', flPastBtn:'Review them',
   lnCol:'Fix it', lnDay:'Open day', lnDayOf:'Open {name}’s day on Timesheets', lnReviewOf:'Review {name}’s sign-off fix', lnFixOf:'Fix {name}’s sign-off', lnFloor:'Open Floor', lnFloorOf:'Find {name} on the Floor', lnVisits:'Open visits', lnVisitsOf:'Open the visits for that day ({name})', lnRoster:'Add Payroll ID: {name}', lnRosterOf:'Open {name} on the Roster to add a Payroll ID', lnAlready:'Already done. Someone has fixed this.', lnOld:'This day is older than the last 10 days. Open it from Timesheets.',
   tabDay:'Day report', drTitle:'Day report', drDay:'Day', drYesterday:'Yesterday', drFor:'{day} · {site}',
   drSub:'Who did what, by name. Tap a number to jump to the list.', drStillLoading:'Photos and locations are still loading.', drNone:'Nobody worked and no member came on this day.',
@@ -5574,7 +5604,8 @@ function coordView(){
     <button type="button" class="count" data-act="jump" data-id="offers"><b class="num">${c.offers}</b><span>${esc(t('cOffers'))}</span></button>
     <button type="button" class="count${c.free && c.waiting?' hot':''}" data-act="jump" data-id="free"><b class="num">${c.free}</b><span>${esc(t('cFree'))}</span></button>
     <button type="button" class="count" data-act="jump" data-id="serving"><b class="num">${c.serving}</b><span>${esc(t('cServing'))}</span></button></div>`;
-  const alerts = b.alerts.length ? `<div class="alerts">${b.alerts.map(al => {
+  const isFix = al => al.kind === 'correction_pending' || al.kind === 'auto_unverified';
+  const alertHtml = al => {
     if(al.kind === 'offer_waiting'){
       const a = al.assignment, m = member(a.memberId), pr = provider(a.providerId);
       return `<div class="alert"><p>${esc(t('alertOffer',{provider:pr.name, member:m.name, dur:dur(al.min)}))}</p>
@@ -5596,7 +5627,9 @@ function coordView(){
     const pr = al.provider;
     return `<div class="alert"><p>${esc(t('alertFree',{provider:pr.name, dur:dur(al.min)}))}</p>
       <div class="row-actions"><button class="btn btn-sm primary" data-act="pickMemberOpen" data-id="${esc(pr.id)}">${esc(t('giveMember',{first:first(pr.name)}))}</button></div></div>`;
-  }).join('')}</div>` : '';
+  };
+  const urgentA = b.alerts.filter(al => !isFix(al)), fixA = b.alerts.filter(isFix);
+  const alerts = urgentA.length ? `<div class="alerts fl-urgent">${urgentA.map(alertHtml).join('')}</div>` : '';
 
   const waiting = b.waiting.length ? b.waiting.map(w => {
     const m = w.member;
@@ -5620,7 +5653,7 @@ function coordView(){
     <p class="note">${esc(t('checkInNote'))}</p>
     <div class="chips">${b.notArrived.map(m => `<button class="btn btn-sm btn-line" data-act="checkIn" data-id="${esc(m.id)}">${esc(t('checkIn'))}: ${esc(m.name)}</button>`).join('')}</div></details>` : '';
 
-  const provs = b.providers.map(pv => {
+  const provRow = pv => {
     const p = pv.provider, d = pv.day;
     let pill;
     if(pv.state === 'off') pill = `<span class="pill pill-off">${esc(t('st_off'))}</span>`;
@@ -5649,21 +5682,26 @@ function coordView(){
     const give = d.clockedIn && pv.room > 0 && b.waiting.some(w => (w.need === 2 ? w.open > 0 : !w.offer)) ? `<div class="row-actions"><button class="btn btn-sm" data-act="pickMemberOpen" data-id="${esc(p.id)}">${esc(t('giveMember',{first:first(p.name)}))}</button></div>` : '';
     return `<div class="row prov${pv.state==='off'?' off':''}"><div class="row-top"><b>${esc(p.name)}</b>${E.isAdminProvider(p) ? `<span class="pill pill-count">${esc(t('adminTag'))}</span>` : ''}${pill}${loadPill}${notesPill}${meta}</div>
       ${items ? `<div class="mlist">${items}</div>` : ''}${give}</div>`;
-  }).join('');
+  };
+  const working = b.providers.filter(pv => pv.day.clockedIn), notWorking = b.providers.filter(pv => !pv.day.clockedIn);
+  const provs = (working.length ? working.map(provRow).join('') : `<p class="empty">${esc(t('flNobodyIn'))}</p>`)
+    + (notWorking.length ? `<details class="later fl-off"${ui.flOffOpen ? ' open' : ''}><summary data-act="flOffToggle">${esc(t('flNotWorking',{n:notWorking.length}))}</summary>${notWorking.map(provRow).join('')}</details>` : '');
 
-  const evs = b.events.slice(0,60);
-  const log = evs.length ? `<ol class="log" tabindex="0" aria-label="${esc(t('logLabel'))}">${evs.map(e => `<li><time class="num">${esc(tm(e.at))}</time><span>${esc(evText(e))}</span></li>`).join('')}</ol>` : `<p class="empty">${esc(t('noActivity'))}</p>`;
+  const evs = b.events.slice(0, ui.flLogAll ? 60 : 12);
+  const log = evs.length ? `<ol class="log" tabindex="0" aria-label="${esc(t('logLabel'))}">${evs.map(e => `<li><time class="num">${esc(tm(e.at))}</time><span>${esc(evText(e))}</span></li>`).join('')}</ol>${!ui.flLogAll && b.events.length > 12 ? `<button class="btn btn-sm btn-line" data-act="flLogAll">${esc(t('flLogMore',{n:Math.min(b.events.length,60) - 12}))}</button>` : ''}` : `<p class="empty">${esc(t('noActivity'))}</p>`;
 
   const empty = !b.events.length && !b.providers.some(p => p.day.clockedIn);
   const emptyBox = empty ? `<section class="panel"><h2>${esc(t('emptyBoardTitle',{site:s.name}))}</h2><p>${esc(t('emptyBoardText'))}</p></section>` : '';
 
   const past = E.openFixes(state, s.id, now).filter(f => f.date !== date);
-  const pastBox = past.length ? `<section class="panel"><h2>${esc(t('earlierDays'))}</h2>${past.map(f => {
-    const nm = f.provider ? f.provider.name : '';
-    const c = f.correction && f.correction.status === 'pending' ? f.correction : null;
-    return `<div class="alert warn"><p><b>${esc(fmtDay(f.date))}</b> · ${esc(c ? t('alertFix',{provider:nm, time:tm(c.claimedEndAt), reason:t('cr_'+c.reason)}) : (f.correction && f.correction.status === 'rejected') ? t('alertRejected',{provider:nm, cut:tm(f.shift.autoSignedOffAt)}) : t('alertAuto',{provider:nm, time:tm(f.shift.autoSignedOffAt)}))}</p>
-      <div class="row-actions">${c ? `<button class="btn btn-sm primary" data-act="reviewOpen" data-id="${esc(c.id)}">${esc(t('review'))}</button>` : `<button class="btn btn-sm primary" data-act="cfOpen" data-id="${esc(f.shift.id)}">${esc(t('fixMyself'))}</button>`}</div></div>`;
-  }).join('')}</section>` : '';
+  const oldest = past.reduce((m, f) => !m || f.date < m ? f.date : m, null);
+  const pastLine = past.length ? `<div class="fl-past"><p><b>${esc(t('flPast',{n:past.length}))}</b> <span class="muted">${esc(t('flPastOldest',{day:fmtDay(oldest)}))}</span></p><button class="btn btn-sm primary" data-act="flPastOpen">${esc(t('flPastBtn'))}</button></div>` : '';
+  const fixN = fixA.length + past.length;
+  const fixSec = `<section class="panel fl-sec" data-fl="fix" id="fl-fix"><h2 tabindex="-1">${esc(t('flFix'))} <span class="pill ${fixN ? 'pill-offer' : 'pill-count'} num">${fixN}</span></h2>
+    ${fixA.length ? `<div class="alerts">${fixA.map(alertHtml).join('')}</div>` : ''}${pastLine}${fixN ? '' : `<p class="empty">${esc(t('flFixNone'))}</p>`}</section>`;
+  const tab = ui.flTab = ui.flTab || LS.get('flTab', 'wait');
+  const tabBtn = (id, label, n, hot) => `<button class="fl-tab${hot ? ' hot' : ''}" role="tab" aria-selected="${tab === id}" aria-controls="fl-${id}" data-act="flTab" data-id="${id}">${esc(label)}${n != null ? ` <span class="num">${n}</span>` : ''}</button>`;
+  const tabBar = `<div class="fl-tabs" role="tablist" aria-label="${esc(t('flTabsLabel'))}">${tabBtn('wait', t('flTWait'), b.waiting.length, b.waiting.some(w => w.waitMin >= 10 && !w.offer))}${tabBtn('prov', t('flTProv'), working.length, false)}${tabBtn('fix', t('flFix'), fixN, fixN > 0)}${tabBtn('log', t('flTLog'), null, false)}</div>`;
   const autoBtn = b.providers.some(x => x.day.clockedIn) ? `<button class="btn btn-sm btn-line" data-act="autoAsk">${esc(t('autoRun'))}</button>` : '';
   let clearUi = ui.autoAsk
     ? `<span class="grow" style="color:var(--alert);font-weight:700">${esc(t('autoAsk',{site:s.name}))}</span><button class="btn btn-sm" data-act="autoNo">${esc(t('cancel'))}</button><button class="btn btn-sm primary" data-act="autoYes">${esc(t('autoYes'))}</button>`
@@ -5674,12 +5712,16 @@ function coordView(){
     <div class="board-head"><h1>${esc(t('coordTitle'))}</h1><div class="sites" role="group" aria-label="${esc(t('site'))}">${sites}</div></div>
     ${viewTabs()}
     
-    ${counts}${alerts}${pastBox}${emptyBox}
+    ${counts}${alerts}${emptyBox}
+    <div class="fl-body fl-on-${tab}">
+    ${tabBar}
+    ${fixN ? fixSec.replace('fl-sec"', 'fl-sec fl-fix-top"') : fixSec}
     <div class="cols">
-      <section class="panel" id="fl-wait"><h2 tabindex="-1">${esc(t('cWaiting'))} <span class="pill pill-count num">${b.waiting.length}</span></h2>${waiting}${later}</section>
-      <section class="panel" id="fl-prov"><h2 tabindex="-1">${esc(t('providers'))}</h2>${provs}</section>
+      <section class="panel fl-sec" data-fl="wait" id="fl-wait"><h2 tabindex="-1">${esc(t('cWaiting'))} <span class="pill pill-count num">${b.waiting.length}</span></h2>${waiting}${later}</section>
+      <section class="panel fl-sec" data-fl="prov" id="fl-prov"><h2 tabindex="-1">${esc(t('providers'))} <span class="pill pill-count num">${working.length}</span></h2>${provs}</section>
     </div>
-    <section class="panel"><h2>${esc(t('activity'))}</h2>${log}</section>
+    <section class="panel fl-sec" data-fl="log" id="fl-log"><h2 tabindex="-1">${esc(t('activity'))}</h2>${log}</section>
+    </div>
     ${clearUi ? `<div class="foot">${clearUi}</div>` : ''}
   </main>`;
 }
@@ -5919,7 +5961,11 @@ document.addEventListener('click', async ev => {
       toast(r.ok ? t('autoDone',{n:r.event ? r.event.count : 0}) : t('autoNone'));
       render(); break;
     }
-    case 'jump': floorJump(d.id); break;
+    case 'jump': { const tb = d.id === 'wait' || d.id === 'offers' ? 'wait' : 'prov'; if(window.matchMedia && window.matchMedia('(max-width: 899px)').matches && ui.flTab !== tb){ ui.flTab = tb; render(); } floorJump(d.id); break; }
+    case 'flTab': ui.flTab = d.id; LS.set('flTab', d.id); render(); { const bar = document.querySelector('.fl-tabs'); if(bar && bar.getBoundingClientRect().top < 0) bar.scrollIntoView({block:'start'}); } break;
+    case 'flLogAll': ui.flLogAll = true; render(); break;
+    case 'flOffToggle': ui.flOffOpen = !ui.flOffOpen; break;
+    case 'flPastOpen': ui.view = 'day'; drState('coord').date = today(); render(); setTimeout(() => { const el = document.getElementById('dr-fixes'); if(el){ el.scrollIntoView({block:'start'}); el.setAttribute('tabindex','-1'); el.focus({preventScroll:true}); } }, 60); break;
     case 'view': ui.view = d.id; if(d.id === 'activity' && ui.role === 'hr'){ alClear(); alState().shown = AL.PAGE; } render(); window.scrollTo(0,0); break;
     case 'alMore': if(ui.role === 'hr'){ alState().shown = (alState().shown || AL.PAGE) + AL.PAGE; render(); } break;
     case 'alRetry': alClear(); render(); break;
