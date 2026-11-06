@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-TdzTF7KKc0bOKzdtjyw9SoSirruICiD0T99MtDBoyNY=' 'sha256-aDizbmCNbxu+G/9WeUQfdZU3sSr4R9BLkaYsLYCr5LE=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-O9mH0KQxGr9iZU42/4un6mhMNwgxfjRNkXOyesLk9xs=' 'sha256-pe+bZZzdlFDdFcibftQIL5oTyshji81w4GkcnYmxfKY=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -406,6 +406,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
 .dr-hl li.dr-bad .ck-ic{color:var(--offer)}.dr-hl li.dr-good .ck-ic{color:var(--go)}
 .dr-group{margin:18px 0 6px;font-size:20px}.dr-sec.dr-bad{border-left:4px solid var(--offer-line)}.dr-sec.dr-good{border-left:4px solid var(--go)}
 .sheet .opt[hidden]{display:none}.sheet-q{margin:4px 0 8px}.sheet-q input{width:100%}
+.et-reasons{border:0;padding:0;margin:0 0 8px;display:grid;gap:6px}.et-reasons legend{padding:0}
 .dr-act{white-space:nowrap}.dr-act .btn{min-height:44px}
 .dr-names{display:flex;flex-wrap:wrap;gap:6px;margin:0}.dr-h{margin:0 0 6px}.dr-sec .tbl th[scope=row]{font-weight:700;color:var(--ink);background:none;font-size:15px}
 .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
@@ -506,6 +507,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
   var DAY_MS = 24 * 60 * 60 * 1000;
   var CORRECTION_REASONS = ['forgot', 'phone', 'rushed', 'other'];
   var CORRECTION_DECISIONS = ['approve', 'adjust', 'reject'];
+  // T-45: why HR or a coordinator changed a provider's clock-in or sign-off time
+  var EDIT_REASONS = ['forgot_clock_in', 'forgot_sign_off', 'late_at_site', 'phone', 'other'];
   var CORRECTION_WINDOW_DAYS = 2; // business days (BR-16)
   var FIXES_LOOKBACK_DAYS = 7;
   var ERROR_CODES = Object.freeze([
@@ -519,6 +522,8 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     'TOO_EARLY_FOR_SITE',
     // T-37 admin-providers
     'NOT_ADMIN_PROVIDER', 'NOT_YOURS',
+    // T-45 edit times
+    'OTHER_DAY', 'IN_AFTER_OUT', 'IN_FUTURE', 'VISIT_OUTSIDE', 'NO_CHANGE', 'STILL_IN',
     // T-15
     'SENSITIVE'
   ]);
@@ -734,7 +739,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
 
   function makeEvent(ctx, date, type, fields) {
     var ev = { id: ctx.ids(), at: ctx.now, by: ctx.by == null ? null : ctx.by, type: type, siteId: fields.siteId, date: date };
-    ['memberId', 'providerId', 'fromProviderId', 'assignmentId', 'reason', 'done', 'count', 'correctionId', 'decision', 'photo'].forEach(function (k) {
+    ['memberId', 'providerId', 'fromProviderId', 'assignmentId', 'reason', 'done', 'count', 'correctionId', 'decision', 'photo', 'fromIn', 'toIn', 'fromOut', 'toOut', 'editId'].forEach(function (k) {
       if (fields[k] !== undefined && fields[k] !== null) ev[k] = fields[k];
     });
     return ev;
@@ -1151,6 +1156,63 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       if (err) return err;
       var ev = makeEvent(ctx, sh.date, 'coordinatorCorrect', { siteId: sh.siteId, providerId: p.id });
       return done(finalizeShift(state, sh, a.endAt, ctx, comment), ev);
+    },
+
+    // T-45: HR or a coordinator changes a provider's clock-in and/or sign-off time on one day, with a reason.
+    // Every visit must stay inside the new times (visits the 6 PM auto sign-off ended are trimmed instead).
+    // The original times are kept on the shift (origClockInAt / origClockOutAt) and every change is listed in shift.edits.
+    editShiftTimes: function (state, a, ctx) {
+      var p = provider(state, a.providerId);
+      if (!p) return fail('NOT_FOUND', { what: 'provider', id: a.providerId });
+      var sh = shiftFor(state, p.id, a.date);
+      if (!sh) return fail('NOT_FOUND', { what: 'shift', providerId: p.id, date: a.date == null ? null : a.date });
+      if (sh.status === 'correction_pending') return fail('FORM_PENDING', { providerName: p.name, date: sh.date });
+      if (EDIT_REASONS.indexOf(a.reason) < 0) return fail('INVALID', { field: 'reason', value: a.reason == null ? null : a.reason, allowed: EDIT_REASONS.slice() });
+      var comment = typeof a.comment === 'string' ? a.comment.trim() : '';
+      if (!comment) return fail('COMMENT_REQUIRED', { decision: 'editShiftTimes' });
+      var open = sh.status === 'clocked_in';
+      var inAt = a.clockInAt == null ? sh.clockInAt : a.clockInAt;
+      var outAt = a.clockOutAt == null ? sh.clockOutAt : a.clockOutAt;
+      if (typeof inAt !== 'number' || !isFinite(inAt)) return fail('INVALID', { field: 'clockInAt', value: a.clockInAt == null ? null : a.clockInAt });
+      if (open && a.clockOutAt != null) return fail('STILL_IN', { providerName: p.name });
+      if (!open && (typeof outAt !== 'number' || !isFinite(outAt))) return fail('INVALID', { field: 'clockOutAt', value: a.clockOutAt == null ? null : a.clockOutAt });
+      if (dateKey(inAt) !== sh.date || (!open && dateKey(outAt) !== sh.date)) return fail('OTHER_DAY', { date: sh.date });
+      if (inAt > ctx.now || (!open && outAt > ctx.now)) return fail('IN_FUTURE', {});
+      if (!open && inAt >= outAt) return fail('IN_AFTER_OUT', { in: timeLabel(inAt), out: timeLabel(outAt) });
+      if (inAt === sh.clockInAt && (open || outAt === sh.clockOutAt)) return fail('NO_CHANGE', {});
+      // visits must fit inside the new day
+      var clash = null, trims = [];
+      assignmentsOn(state, sh.date).forEach(function (x) {
+        if (clash || x.providerId !== p.id || x.acceptedAt == null) return;
+        if (x.status !== 'ended' && x.status !== 'active') return;
+        if (x.acceptedAt < inAt) { clash = { memberName: memberName(state, x.memberId), at: timeLabel(x.acceptedAt), kind: 'started_before' }; return; }
+        if (open || x.status === 'active') return;
+        if (x.endReason === 'auto_signoff') { if (x.endedAt == null || x.endedAt > outAt) trims.push(x); return; }
+        if (x.acceptedAt > outAt) { clash = { memberName: memberName(state, x.memberId), at: timeLabel(x.acceptedAt), kind: 'started_after' }; return; }
+        if (x.endedAt != null && x.endedAt > outAt) clash = { memberName: memberName(state, x.memberId), at: timeLabel(x.endedAt), kind: 'ended_after' };
+      });
+      if (clash) return fail('VISIT_OUTSIDE', clash);
+      var by = ctx.by == null ? null : ctx.by;
+      var edit = { id: ctx.ids(), at: ctx.now, by: by, reason: a.reason, comment: comment,
+        fromIn: sh.clockInAt, toIn: inAt, fromOut: open ? null : sh.clockOutAt, toOut: open ? null : outAt };
+      var f = { clockInAt: inAt, edits: arr(sh.edits).concat([edit]), editedAt: ctx.now, editedBy: by };
+      if (sh.origClockInAt == null) f.origClockInAt = sh.clockInAt;
+      if (!open) {
+        f.clockOutAt = outAt;
+        if (sh.origClockOutAt == null) f.origClockOutAt = sh.clockOutAt;
+        if (sh.status === 'auto_signed_off' || sh.status === 'corrected') {   // a fixed day: the new time is the final one
+          f.status = 'corrected'; f.finalEndAt = outAt; f.correctedAt = ctx.now; f.correctedBy = by; f.correctionComment = comment;
+        }
+      }
+      var us = withFields(sh, f);
+      var writes = [{ col: 'shifts', id: us.id, doc: us }];
+      trims.forEach(function (x) {
+        var t = x.acceptedAt >= outAt ? withFields(x, { endedAt: x.acceptedAt, trimmed: true }) : withFields(x, { endedAt: outAt });
+        writes.push({ col: 'assignments', id: t.id, doc: t });
+      });
+      var ev = makeEvent(ctx, sh.date, 'timesEdited', { siteId: sh.siteId, providerId: p.id, reason: a.reason, editId: edit.id,
+        fromIn: edit.fromIn, toIn: edit.toIn, fromOut: edit.fromOut, toOut: edit.toOut });
+      return done(writes, ev);
     }
   };
 
@@ -2895,6 +2957,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     UNDO_SEC: UNDO_SEC,
     ERROR_CODES: ERROR_CODES,
     CORRECTION_REASONS: CORRECTION_REASONS.slice(),
+    EDIT_REASONS: EDIT_REASONS.slice(),
     CORRECTION_WINDOW_DAYS: CORRECTION_WINDOW_DAYS,
     cutoffFor: cutoffFor,
     businessDaysBetween: businessDaysBetween,
@@ -3182,6 +3245,14 @@ en:{
   tabFloor:'Floor', tabSheets:'Timesheets', allSites:'All sites',
   qProviders:'Search providers by name', qMembers:'Search members by name', qNone:'No one matches. Check the spelling.',
   flTWait:'Waiting', flTProv:'Providers', flTLog:'Activity', flFix:'To fix', flFixNone:'Nothing to fix.', flTabsLabel:'Floor sections', flNotWorking:'Not working now ({n})', flNobodyIn:'No provider is clocked in yet.', flLogMore:'Show {n} earlier', flPast:'{n} sign-off fix(es) from earlier days', flPastOldest:'oldest {day}', flPastBtn:'Review them',
+  etBtn:'Edit times', etOf:'Edit {name}’s times for {day}', etTitle:'Edit {name}’s times', etLead:'Change the clock-in or sign-off time. {first} will see the change on their phone, and it is kept in the Activity log.',
+  etIn:'Clocked in', etOut:'Signed off', etOutOpen:'Still clocked in. You can change the sign-off time after the day ends.', etOrig:'Originally: in {in}{out}', etOrigOut:', out {out}',
+  etReason:'Reason', et_forgot_clock_in:'Forgot to clock in', et_forgot_sign_off:'Forgot to sign off', et_late_at_site:'Clocked in late at the site', et_phone:'Phone or app problem', et_other:'Other',
+  etComment:'What happened ({first} will see this)', etSave:'Save times', etSaved:'Times saved. {first} will see the change.', etNeedReason:'Pick a reason.', etNoTime:'Enter both times.',
+  etNotice:'{who} changed your times for {day}: {what}. Reason: {reason}.', etWhoHr:'HR', etWhoCoord:'Your coordinator', etWhatIn:'clock-in {from} → {to}', etWhatOut:'sign-off {from} → {to}',
+  ev_timesEdited:'{provider}’s times changed: {what} ({reason})', etHist:'Earlier changes',
+  err_OTHER_DAY:'Both times must be on that day.', err_IN_AFTER_OUT:'The clock-in time must be before the sign-off time.', err_IN_FUTURE:'That time has not happened yet.',
+  err_VISIT_OUTSIDE:'{memberName}’s visit at {at} would fall outside the new times. Change the visit first, or pick other times.', err_NO_CHANGE:'Nothing changed: the times are the same.', err_STILL_IN:'They are still clocked in. Change the sign-off time after the day ends.',
   lnCol:'Fix it', lnDay:'Open day', lnDayOf:'Open {name}’s day on Timesheets', lnReviewOf:'Review {name}’s sign-off fix', lnFixOf:'Fix {name}’s sign-off', lnFloor:'Open Floor', lnFloorOf:'Find {name} on the Floor', lnVisits:'Open visits', lnVisitsOf:'Open the visits for that day ({name})', lnRoster:'Add Payroll ID: {name}', lnRosterOf:'Open {name} on the Roster to add a Payroll ID', lnAlready:'Already done. Someone has fixed this.', lnOld:'This day is older than the last 10 days. Open it from Timesheets.',
   tabDay:'Day report', drTitle:'Day report', drDay:'Day', drYesterday:'Yesterday', drFor:'{day} · {site}',
   drSub:'Who did what, by name. Tap a number to jump to the list.', drStillLoading:'Photos and locations are still loading.', drNone:'Nobody worked and no member came on this day.',
@@ -4220,6 +4291,49 @@ function sheetFilter(q){
   let shown = 0; items.forEach(el => { const hit = qHit(el.dataset.qname, q); el.hidden = !hit; if(hit) shown++; });
   const none = document.getElementById('sh-q-none'); if(none) none.hidden = shown > 0 || !items.length;
 }
+// T-45 Edit times: HR (any site) and coordinators (their site) change a provider's clock-in or sign-off time, with a reason.
+function etFindShift(providerId, date){
+  const hit = list => (list||[]).find(x => x.providerId === providerId && x.date === date);
+  let sh = hit(state.shifts); if(sh) return sh;
+  for(const k in rangeCache){ const d = rangeCache[k] && rangeCache[k].data; if(d && (sh = hit(d.shifts))) return sh; }
+  return null;
+}
+function etCan(providerId){
+  if(ui.role !== 'hr' && ui.role !== 'coordinator') return false;
+  const me = typeof SB !== 'undefined' && SB.me ? SB.me.provider_id : null;
+  return !me || me !== providerId;
+}
+function etLink(providerId, date, name){
+  if(!etCan(providerId)) return '';
+  return {html: `<button class="btn btn-sm btn-line" data-act="etOpen" data-id="${esc(providerId)}" data-date="${esc(date)}" aria-label="${esc(t('etOf',{name, day:fmtDay(date)}))}">${esc(t('etBtn'))}</button>`};
+}
+function etWhat(e){
+  const parts = [];
+  if(e.toIn != null && e.fromIn !== e.toIn) parts.push(t('etWhatIn',{from:tm(e.fromIn), to:tm(e.toIn)}));
+  if(e.toOut != null && e.fromOut !== e.toOut) parts.push(t('etWhatOut',{from:e.fromOut != null ? tm(e.fromOut) : '–', to:tm(e.toOut)}));
+  return parts.join(', ');
+}
+function etSheet(sh){
+  const shf = etFindShift(sh.providerId, sh.date);
+  if(!shf || shf.status === 'correction_pending') return null;
+  const pr = provider(shf.providerId), f = first(pr.name), open = shf.status === 'clocked_in';
+  if(sh.inTime === undefined) sh.inTime = hhmm(shf.clockInAt);
+  if(sh.outTime === undefined) sh.outTime = open || shf.clockOutAt == null ? '' : hhmm(shf.clockOutAt);
+  const oIn = shf.origClockInAt != null ? shf.origClockInAt : shf.clockInAt, oOut = shf.origClockOutAt != null ? shf.origClockOutAt : shf.clockOutAt;
+  const hist = (shf.edits||[]);
+  return `<h2 id="sheet-h">${esc(t('etTitle',{name:pr.name}))}</h2>
+    <p class="lead">${esc(t('etLead',{first:f}))}</p>
+    <dl class="facts num"><dt>${esc(t('rvDay'))}</dt><dd>${esc(fmtDay(shf.date))}</dd></dl>
+    ${hist.length ? `<p class="muted" style="font-size:15px">${esc(t('etOrig',{in:tm(oIn), out: oOut != null ? t('etOrigOut',{out:tm(oOut)}) : ''}))}</p>` : ''}
+    <div class="field"><label for="et-in">${esc(t('etIn'))}</label><input id="et-in" type="time" data-bind="sheet.inTime" value="${esc(sh.inTime||'')}"></div>
+    ${open ? `<p class="note">${esc(t('etOutOpen'))}</p>` : `<div class="field"><label for="et-out">${esc(t('etOut'))}</label><input id="et-out" type="time" data-bind="sheet.outTime" value="${esc(sh.outTime||'')}"></div>`}
+    <fieldset class="et-reasons"><legend class="group-label">${esc(t('etReason'))}</legend>
+    ${E.EDIT_REASONS.map(r => `<button class="opt" aria-pressed="${sh.reason === r}" data-act="etReason" data-v="${r}"><span class="grow">${esc(t('et_'+r))}</span></button>`).join('')}</fieldset>
+    <div class="field"><label for="et-comment">${esc(t('etComment',{first:f}))}</label><textarea id="et-comment" data-bind="sheet.comment" class="${sh.badComment?'invalid':''}">${esc(sh.comment||'')}</textarea></div>
+    ${hist.length ? `<details class="later"><summary>${esc(t('etHist'))} (${hist.length})</summary><ul class="done-list" style="margin:0;border:0">${hist.slice().reverse().map(e => `<li><span>${esc(etWhat(e))}<small class="num">${esc(fmtDay(E.dateKey(e.at)))} ${esc(tm(e.at))} · ${esc(t('et_'+e.reason))}</small></span></li>`).join('')}</ul></details>` : ''}
+    <button class="btn btn-accent" data-act="etSave">${esc(t('etSave'))}</button>
+    <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
+}
 function lnOpenDay(providerId, date, tab){
   ui.view = 'reports';
   ui.rep = Object.assign(ui.rep || {}, {period:'custom', from:date, to:date, providerId: providerId || 'all', status:'all', tab: tab || 'timesheet'});
@@ -4279,7 +4393,7 @@ function dayReportView(mode){
     `<p class="dr-names">${D.endedSelf.map(p => `<span class="pill pill-serving">${esc(p.name)}</span>`).join(' ')}</p>`, 'dr-good') : '';
   const all = drSection('all', t('drS_all'), '', D.people.length,
     drTable([t('cProvider')].concat(mode === 'hr' && !D.siteId ? [t('cSite')] : []).concat([t('cIn'), t('cOut'), t('drC_ended'), t('drC_members'), t('cWithM'), t('drC_photo'), t('drC_loc'), t('lnCol')]),
-      D.people.map(p => [p.name].concat(mode === 'hr' && !D.siteId ? [p.siteName] : []).concat([p.inAt ? tm(p.inAt) : '', p.outAt ? tm(p.outAt) : '', t(DR_ENDED[p.ended]), p.members.join(', ') || '–', dur(p.withMemberMin), drPhoto(p.photo), drGeo(p.geo), p.ended === 'auto' || p.ended === 'fix_sent' ? fixLink(p.providerId, p.date, p.name) : dayLink(p.providerId, p.date, p.name)]))));
+      D.people.map(p => [p.name].concat(mode === 'hr' && !D.siteId ? [p.siteName] : []).concat([p.inAt ? tm(p.inAt) : '', p.outAt ? tm(p.outAt) : '', t(DR_ENDED[p.ended]), p.members.join(', ') || '–', dur(p.withMemberMin), drPhoto(p.photo), drGeo(p.geo), p.ended === 'auto' || p.ended === 'fix_sent' ? fixLink(p.providerId, p.date, p.name) : (etLink(p.providerId, p.date, p.name) || dayLink(p.providerId, p.date, p.name))]))));
   const dl = `<div class="dl no-print"><button class="btn btn-sm primary" data-act="drPrint">${esc(t('drPrint'))}</button><button class="btn btn-sm btn-line" data-act="drCsv">${esc(t('drCsv'))}</button></div>
     <p class="muted dr-foot" style="font-size:13px">${esc(t('genBy', {who: whoLabel(), when: today() + ' ' + tm(Date.now())}))}. ${esc(t('phiNote'))}</p>`;
   return `<main class="board dr-rep">${head}${title}${kpis}${glance}${need}${good}${all}${dl}</main>`;
@@ -4395,8 +4509,8 @@ function tableHtml(tab, R){
   const flag = x => tab === 'timesheet' ? !x.verified : tab === 'weeks' ? x.unverifiedDays > 0 : false;
   const wrapCol = tab === 'exceptions' ? 4 : -1;
   const ph = tab === 'timesheet' && PHOTO.on;
-  const fx = tab === 'timesheet' && (ui.role === 'coordinator' || ui.role === 'hr') && rows.some(x => !x.verified && x.status !== 'open');
-  return `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${HEADS[tab]().map(h=>`<th scope="col">${esc(h)}</th>`).join('')}${ph?`<th scope="col">${esc(t('phCol'))}</th>`:''}${fx?`<th scope="col">${esc(t('lnCol'))}</th>`:''}</tr></thead><tbody>${rows.map(x => `<tr class="${flag(x)?'flag':''}">${cells(x).map((c,i)=>`<td class="${i===wrapCol?'wrap':''}">${esc(c)}</td>`).join('')}${ph?`<td class="ph-cell">${photoThumb(x, x.providerName) || '–'}</td>`:''}${fx?`<td class="dr-act">${x.verified || x.status === 'open' ? '' : (fixLink(x.providerId, x.date, x.providerName).html)}</td>`:''}</tr>`).join('')}</tbody></table></div>`;
+  const fx = tab === 'timesheet' && (ui.role === 'coordinator' || ui.role === 'hr');
+  return `<div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl"><thead><tr>${HEADS[tab]().map(h=>`<th scope="col">${esc(h)}</th>`).join('')}${ph?`<th scope="col">${esc(t('phCol'))}</th>`:''}${fx?`<th scope="col">${esc(t('lnCol'))}</th>`:''}</tr></thead><tbody>${rows.map(x => `<tr class="${flag(x)?'flag':''}">${cells(x).map((c,i)=>`<td class="${i===wrapCol?'wrap':''}">${esc(c)}</td>`).join('')}${ph?`<td class="ph-cell">${photoThumb(x, x.providerName) || '–'}</td>`:''}${fx?`<td class="dr-act">${x.verified || x.status === 'open' || x.status === 'signed_off' || x.status === 'corrected' ? ((etLink(x.providerId, x.date, x.providerName) || {html:''}).html) : (fixLink(x.providerId, x.date, x.providerName).html)}</td>`:''}</tr>`).join('')}</tbody></table></div>`;
 }
 function whoLabel(){ return ui.role === 'hr' ? t('whoHr') : ui.role === 'coordinator' ? t('whoCoord',{site:siteLabel(ui.siteId)}) : (me()||{}).name || ''; }
 function reportsView(mode){
@@ -5567,6 +5681,13 @@ function providerNotices(p, date){
       out.push({id:a.id, at:a.endedAt, text:t('leftNotice',{member:m.name, first:first(m.name), time:tm(a.endedAt)})});
     }
   });
+  (state.shifts||[]).forEach(s => {   // T-45: HR or the coordinator changed my times
+    if(s.providerId !== p.id) return;
+    (s.edits||[]).forEach(e => {
+      if(ui.seen[e.id]) return;
+      out.push({id:e.id, at:e.at, text:t('etNotice',{who:t(String(e.by||'').startsWith('coord') ? 'etWhoCoord' : 'etWhoHr'), day:fmtDay(s.date), what:etWhat(e), reason:t('et_'+e.reason)})});
+    });
+  });
   out.sort((x,y)=>y.at-x.at);
   return out.map(n => `<div class="notice" role="status">${I.bell}<p>${esc(n.text)}</p><button class="btn btn-sm" data-act="seen" data-id="${esc(n.id)}">${esc(t('ok'))}</button></div>`).join('');
 }
@@ -5746,6 +5867,7 @@ function evText(e){
   if(e.type === 'memberLeft') p.reason = t('reason_'+(e.reason||'other'));
   if(e.type === 'correctionDecided') p.decision = t('dec_'+(e.decision||'approve'));
   if(e.type === 'autoSignOff') p.count = e.count;
+  if(e.type === 'timesEdited'){ p.what = etWhat(e); p.reason = t('et_'+(e.reason||'other')); }
   if(e.type === 'notes') return t(e.done ? 'ev_notes_done' : 'ev_notes_undone', p);
   return t('ev_'+e.type, p);
 }
@@ -5862,6 +5984,7 @@ function sheetBody(sh){
       <button class="btn btn-accent" data-act="rvSave" ${dec?'':'disabled'}>${esc(t('rvSave'))}</button>
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
   }
+  if(sh.kind === 'et') return etSheet(sh);
   if(sh.kind === 'cf'){
     const shf = shiftById(sh.shiftId);
     if(!shf || shf.status !== 'auto_signed_off') return null;
@@ -5942,6 +6065,21 @@ document.addEventListener('click', async ev => {
     }
     case 'cfOpen': ui.sheet = {kind:'cf', shiftId:d.id}; render(); break;
     case 'cfKeep': ui.sheet.keep = d.v === '1'; render(); break;
+    case 'etOpen': { const shf = etFindShift(d.id, d.date); if(!shf){ toast(t('lnOld'), true); break; } if(shf.status === 'correction_pending' && shf.correctionId){ ui.sheet = {kind:'review', correctionId:shf.correctionId}; render(); break; } ui.sheet = {kind:'et', providerId:d.id, date:d.date, _fresh:true}; render(); break; }
+    case 'etReason': ui.sheet.reason = d.v; render(); break;
+    case 'etSave': {
+      const sh = ui.sheet, shf = etFindShift(sh.providerId, sh.date); if(!shf) break;
+      const open = shf.status === 'clocked_in';
+      const inAt = toMs(shf.date, sh.inTime), outAt = open ? null : toMs(shf.date, sh.outTime);
+      if(inAt == null || (!open && outAt == null)){ toast(t('etNoTime'), true); break; }
+      if(!sh.reason){ toast(t('etNeedReason'), true); break; }
+      if(!(sh.comment||'').trim()){ sh.badComment = true; render(); toast(t('err_COMMENT_REQUIRED'), true); setTimeout(()=>{ const c = document.getElementById('et-comment'); if(c) c.focus(); }, 60); break; }
+      if(sensitiveIn(sh.comment)){ sh.badComment = true; render(); sensitiveToast(); break; }
+      const r = await act({type:'editShiftTimes', providerId:shf.providerId, date:shf.date, clockInAt: inAt !== shf.clockInAt ? inAt : null, clockOutAt: !open && outAt !== shf.clockOutAt ? outAt : null, reason:sh.reason, comment:(sh.comment||'').trim()}, {silent:true});
+      if(r.ok){ for(const k in rangeCache) delete rangeCache[k]; ui.sheet = null; render(); toast(t('etSaved',{first:first(provider(shf.providerId).name)})); }
+      else toast(t('err_'+r.code, r.params||{}), true);
+      break;
+    }
     case 'cfSave': {
       const sh = ui.sheet, shf = shiftById(sh.shiftId); if(!shf) break;
       const endAt = sh.keep ? shf.autoSignedOffAt : toMs(shf.date, sh.time);
