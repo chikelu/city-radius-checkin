@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-O9mH0KQxGr9iZU42/4un6mhMNwgxfjRNkXOyesLk9xs=' 'sha256-pe+bZZzdlFDdFcibftQIL5oTyshji81w4GkcnYmxfKY=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-XSK2Y2vuxRtNwQZz2DOwTxspaSP35FfkauTOF5gy3hA=' 'sha256-vWhA9Qosw2/mYn4gPu69zbz9U9D5YlDzM4e8i/iWKjw=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -509,6 +509,30 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
   var CORRECTION_DECISIONS = ['approve', 'adjust', 'reject'];
   // T-45: why HR or a coordinator changed a provider's clock-in or sign-off time
   var EDIT_REASONS = ['forgot_clock_in', 'forgot_sign_off', 'late_at_site', 'phone', 'other'];
+  // T-46: "Done for today?" push 5 min after the last member leaves; sign off 30 min after that if still idle
+  var IDLE_REMIND_MIN = 5, IDLE_SIGNOFF_MIN = 35;
+  // T-47: a coordinator can undo "Send home" for 10 minutes
+  var SEND_HOME_UNDO_MIN = 10;
+  // Who is idle: clocked in, nobody with them or offered to them, and their last member left. -> { shift, lastLeftAt } | null
+  function idleInfo(state, sh) {
+    if (!sh || sh.status !== 'clocked_in') return null;
+    var last = null, busy = false;
+    arr(state.assignments).forEach(function (x) {
+      if (x.providerId !== sh.providerId || x.date !== sh.date) return;
+      if (x.status === 'offered' || x.status === 'active') busy = true;
+      else if (x.status === 'ended' && typeof x.endedAt === 'number' && (last == null || x.endedAt > last)) last = x.endedAt;
+    });
+    if (busy || last == null) return null;
+    return { shift: sh, lastLeftAt: last < sh.clockInAt ? sh.clockInAt : last };
+  }
+  function idleDue(state, now) {
+    var out = [];
+    arr(state.shifts).forEach(function (sh) {
+      var i = idleInfo(state, sh);
+      if (i && now >= i.lastLeftAt + IDLE_SIGNOFF_MIN * 60000 && now < cutoffFor(state, sh.siteId, sh.date)) out.push({ providerId: sh.providerId, date: sh.date, siteId: sh.siteId, lastLeftAt: i.lastLeftAt });
+    });
+    return out;
+  }
   var CORRECTION_WINDOW_DAYS = 2; // business days (BR-16)
   var FIXES_LOOKBACK_DAYS = 7;
   var ERROR_CODES = Object.freeze([
@@ -1037,8 +1061,54 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
       return done([{ col: 'shifts', id: upd.id, doc: upd }], ev);
     },
 
+    // T-47 Send home: the coordinator (own site) or HR ends a provider's day now. Same checks as the provider's own
+    // sign-off: nobody with them or offered to them, notes done. The day counts as signed off (confirmed by staff).
+    sendHome: function (state, a, ctx, date) {
+      var p = provider(state, a.providerId);
+      if (!p) return fail('NOT_FOUND', { what: 'provider', id: a.providerId });
+      var sh = shiftFor(state, p.id, date);
+      if (sh && !isClockedIn(sh) && (isSignedOff(sh) || isAutoStatus(sh.status))) {
+        return fail('ALREADY_SIGNED_OFF', { providerName: p.name, status: sh.status, at: timeLabel(sh.signedOffAt != null ? sh.signedOffAt : sh.clockOutAt) });
+      }
+      if (!isClockedIn(sh)) return fail('NOT_CLOCKED_IN', { providerName: p.name });
+      var co = checkout(state, p.id, date, ctx.now);
+      if (!co.ready) {
+        return fail('NOT_READY', {
+          providerName: p.name,
+          active: co.active.map(idOf), offers: co.offers.map(idOf), missingNotes: co.missingNotes.map(idOf)
+        });
+      }
+      var upd = withFields(sh, { status: 'signed_off', clockOutAt: ctx.now, signedOffAt: ctx.now, sentHome: true, sentHomeBy: ctx.by });
+      return done([{ col: 'shifts', id: upd.id, doc: upd }], makeEvent(ctx, date, 'sentHome', { siteId: sh.siteId, providerId: p.id }));
+    },
+
+    // T-47: undo a Send home within 10 minutes (a wrong tap). The day is open again as before.
+    undoSendHome: function (state, a, ctx, date) {
+      var p = provider(state, a.providerId);
+      if (!p) return fail('NOT_FOUND', { what: 'provider', id: a.providerId });
+      var sh = shiftFor(state, p.id, date);
+      if (!sh || !sh.sentHome || sh.status !== 'signed_off') return fail('NOTHING_TO_DO', { providerName: p.name, date: date });
+      if (ctx.now > sh.signedOffAt + SEND_HOME_UNDO_MIN * 60000) return fail('UNDO_EXPIRED', { providerName: p.name, minutes: SEND_HOME_UNDO_MIN });
+      var upd = withFields(sh, { status: 'clocked_in', clockOutAt: null, signedOffAt: null, sentHome: null, sentHomeBy: null });
+      return done([{ col: 'shifts', id: upd.id, doc: upd }], makeEvent(ctx, date, 'undoSendHome', { siteId: sh.siteId, providerId: p.id }));
+    },
+
     // ---------- step 3 ----------
     // Close every open shift at the site at cutoffAt (BR-13, BR-14). Repeat sweeps → NOTHING_TO_DO.
+    // T-46: sign off a provider who has been idle 35 min since their last member left (system job; HR may run it).
+    // The day ends at the time the last member left and shows as auto signed off, so the provider can still send a fix.
+    idleSignOff: function (state, a, ctx) {
+      var p = provider(state, a.providerId);
+      if (!p) return fail('NOT_FOUND', { what: 'provider', id: a.providerId });
+      var sh = shiftFor(state, p.id, a.date);
+      if (!sh) return fail('NOT_FOUND', { what: 'shift', providerId: p.id, date: a.date == null ? null : a.date });
+      var i = idleInfo(state, sh);
+      if (!i) return fail('NOTHING_TO_DO', { providerName: p.name, date: sh.date });
+      if (ctx.now < i.lastLeftAt + IDLE_SIGNOFF_MIN * 60000) return fail('TOO_EARLY', { siteName: siteName(state, sh.siteId), at: timeLabel(i.lastLeftAt + IDLE_SIGNOFF_MIN * 60000) });
+      var u = withFields(sh, { status: 'auto_signed_off', clockOutAt: i.lastLeftAt, autoSignedOffAt: i.lastLeftAt, idleSignOff: true });
+      return done([{ col: 'shifts', id: u.id, doc: u }], makeEvent(ctx, sh.date, 'idleSignOff', { siteId: sh.siteId, providerId: p.id }));
+    },
+
     autoSignOff: function (state, a, ctx) {
       var s = site(state, a.siteId);
       if (!s) return fail('NOT_FOUND', { what: 'site', id: a.siteId });
@@ -1956,7 +2026,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     var by = {};
     arr(roster(state).providers).forEach(function (p) {
       by[p.id] = { providerId: p.id, name: p.name, kind: p.kind || 'employee', payrollId: p.payrollId ? String(p.payrollId) : '',
-        siteId: p.siteId, regMin: 0, otMin: 0, totalMin: 0, days: 0, unverifiedDays: 0, openDays: 0 };
+        siteId: p.siteId, regMin: 0, otMin: 0, totalMin: 0, days: 0, unverifiedDays: 0, openDays: 0, withMemberMin: 0, overDays: [] };
     });
     var weeks = {};
     rows.forEach(function (r) {
@@ -1974,6 +2044,9 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
         run += m;
         if (r.date < from || r.date > to) return;
         o.totalMin += m; o.otMin += ot; o.regMin += m - ot; o.days++;
+        // T-47 goal check: time with members (counted once, even with two at a time) must not exceed paid time
+        o.withMemberMin = (o.withMemberMin || 0) + (r.withMemberMin || 0);
+        if ((r.withMemberMin || 0) > m) (o.overDays = o.overDays || []).push(r.date);
         if (r.status === 'open') o.openDays++;
         else if (!r.verified) o.unverifiedDays++;
       });
@@ -1981,19 +2054,25 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     var list = Object.keys(by).map(function (k) { return by[k]; }).filter(function (o) { return o.days > 0; })
       .sort(function (x, y) { return byLastName(x.name, y.name); });
     var hrs = function (min) { return Math.round(min / 60 * 100) / 100; };
-    list.forEach(function (o) { o.regHours = hrs(o.regMin); o.otHours = hrs(o.otMin); o.totalHours = Math.round((o.regHours + o.otHours) * 100) / 100; });
+    list.forEach(function (o) { o.regHours = hrs(o.regMin); o.otHours = hrs(o.otMin); o.totalHours = Math.round((o.regHours + o.otHours) * 100) / 100;
+      o.withMemberHours = hrs(o.withMemberMin || 0); o.idleHours = Math.max(0, Math.round((o.totalHours - o.withMemberHours) * 100) / 100); o.overDays = o.overDays || []; });
     var employees = list.filter(function (o) { return o.kind === 'employee'; });
     var contractors = list.filter(function (o) { return o.kind !== 'employee'; });
     var missingIds = employees.filter(function (o) { return !o.payrollId; });
     var unverifiedDays = list.reduce(function (a, o) { return a + o.unverifiedDays; }, 0);
     var openDays = list.reduce(function (a, o) { return a + o.openDays; }, 0);
+    var overDays = list.reduce(function (a, o) { return a + o.overDays.length; }, 0);
     var inFile = employees.filter(function (o) { return o.payrollId; });
     var sum = function (k) { return Math.round(inFile.reduce(function (a, o) { return a + o[k]; }, 0) * 100) / 100; };
     var idHash = inFile.reduce(function (a, o) { var n = parseInt(String(o.payrollId).replace(/\D/g, ''), 10); return a + (isNaN(n) ? 0 : n); }, 0);
     return {
       from: from, to: to, employees: employees, contractors: contractors,
       checks: { unverifiedDays: unverifiedDays, openDays: openDays, missingIds: missingIds.map(function (o) { return o.name; }),
-        ready: unverifiedDays === 0 && openDays === 0 && missingIds.length === 0 },
+        overDays: overDays, overNames: list.filter(function (o) { return o.overDays.length; }).map(function (o) { return o.name; }),
+        ready: unverifiedDays === 0 && openDays === 0 && missingIds.length === 0 && overDays === 0 },
+      memberTime: { paidHours: Math.round(list.reduce(function (a, o) { return a + o.totalHours; }, 0) * 100) / 100,
+        withMemberHours: Math.round(list.reduce(function (a, o) { return a + o.withMemberHours; }, 0) * 100) / 100,
+        idleHours: Math.round(list.reduce(function (a, o) { return a + o.idleHours; }, 0) * 100) / 100, people: list },
       control: { employees: inFile.length, regHours: sum('regHours'), otHours: sum('otHours'), totalHours: sum('totalHours'), idHash: idHash }
     };
   }
@@ -2958,6 +3037,7 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
     ERROR_CODES: ERROR_CODES,
     CORRECTION_REASONS: CORRECTION_REASONS.slice(),
     EDIT_REASONS: EDIT_REASONS.slice(),
+    SEND_HOME_UNDO_MIN: SEND_HOME_UNDO_MIN, IDLE_REMIND_MIN: IDLE_REMIND_MIN, IDLE_SIGNOFF_MIN: IDLE_SIGNOFF_MIN, idleDue: idleDue,
     CORRECTION_WINDOW_DAYS: CORRECTION_WINDOW_DAYS,
     cutoffFor: cutoffFor,
     businessDaysBetween: businessDaysBetween,
@@ -3190,7 +3270,8 @@ en:{
   soLocked:'Your day is signed off. Ask your coordinator if something is wrong.',
   signedOffAt:'Signed off', step:'Step {n}', todo:'To do', doneMark:'Done',
   decline_leaving:'I am leaving for the day', declineShort_leaving:'leaving for the day',
-  st_signed_off:'Signed off {time}', opt_signed_off:'Signed off for today', inOut:'{start} – {end}',
+  payCkMember:'Time with members is never more than paid time', payCkMemberBad:'{n} days show more time with members than paid time ({names}). Fix the times or the visits first.', mtTitle:'Paid time and time with members', mtHelp:'Time with members counts once per provider, even with two members at a time. Idle is paid time with no member.', mtPaid:'Paid hours', mtWith:'With members', mtIdle:'Idle hours', mtCheck:'Check', mtOver:'More time with members than paid: {days}',
+  st_signed_off:'Signed off {time}', st_sent_home:'Sent home {time}', shBtn:'Send {first} home', shTitle:'Send {name} home?', shLead:'{first} has no member right now. {first}’s day ends now, at {time}, and counts as signed off. {first} gets a notice on the phone.', shGo:'Send home', shDone:'{first} is signed off for today.', shUndo:'Undo', shUndone:'{first} is clocked in again.', shNotice:'Your coordinator signed you off for today at {time}. You can go home. If this is wrong, tell your coordinator.', ev_sentHome:'{provider} was sent home', ev_undoSendHome:'Send home was undone for {provider}', al_sentHome:'{who} sent {provider} home', al_undoSendHome:'{who} undid Send home for {provider}', err_UNDO_EXPIRED:'Too late to undo. Use Edit times instead.', opt_signed_off:'Signed off for today', inOut:'{start} – {end}',
   notesMissingPill:'Notes missing: {n}', notesDonePill:'Notes done',
   ev_notes_done:'{provider} finished notes for {member}', ev_notes_undone:'{provider} unticked notes for {member}', ev_signOff:'{provider} signed off',
   err_ALREADY_SIGNED_OFF:'You already signed off today. Ask your coordinator if you need to work again.',
@@ -3221,10 +3302,10 @@ en:{
   rvDecision:'Your decision', rv_approve:'Approve {time}', rv_adjust:'Use a different time', rv_reject:'Don’t approve',
   rvTime:'Time to use', rvComment:'Comment', rvCommentNeed:'A comment is needed for this choice.', rvCommentOpt:'Comment (optional)',
   rvSave:'Save decision', rvSaved:'Decision saved.',
-  cfTitle:'Fix {name}’s sign-off', cfText:'{first} did not sign off and did not send a fix. Set the time {first} left, or keep {cut}.',
+  cfTitle:'Fix {name}’s sign-off', cfTextIdle:'{first} had no member for 30 minutes, so the app signed {first} off at {cut}, when the last member left. Keep {cut} or set the time {first} left.', cfText:'{first} did not sign off and did not send a fix. Set the time {first} left, or keep {cut}.',
   cfNeedTime:'Enter the time they left, or choose Keep {cut}.', cfKeep:'Keep {cut}', cfSave:'Save fix', cfSaved:'Sign-off fixed.',
   autoRun:'Run 6 pm sign-off now', autoAsk:'Sign off everyone still clocked in at {site} now, as if it were 6 pm?', autoYes:'Yes, sign them off', autoDone:'{n} signed off by the system.', autoNone:'Nobody was still clocked in.',
-  ev_autoSignOff:'System signed off {count} still clocked in', ev_correctionSubmitted:'{provider} sent a sign-off fix', ev_correctionDecided:'{provider}’s sign-off fix: {decision}', ev_coordinatorCorrect:'Coordinator fixed {provider}’s sign-off',
+  ev_autoSignOff:'System signed off {count} still clocked in', ev_idleSignOff:'System signed off {provider}: no member for 30 minutes', ev_correctionSubmitted:'{provider} sent a sign-off fix', ev_correctionDecided:'{provider}’s sign-off fix: {decision}', ev_coordinatorCorrect:'Coordinator fixed {provider}’s sign-off',
   dec_approve:'approved', dec_adjust:'approved with a different time', dec_reject:'not approved',
   err_TOO_EARLY:'It is not that time yet.', err_NOTHING_TO_DO:'Nobody was still clocked in.', err_FORM_PENDING:'A fix for this day is already waiting.', err_FORM_REJECTED:'Your fix was not approved. Talk to your coordinator.',
   err_NOT_AUTO:'This day was not signed off by the system.', err_AFTER_CUTOFF:'The time can’t be after {cut}.', err_BEFORE_CLOCK_IN:'The time can’t be before you clocked in.',
@@ -3253,6 +3334,7 @@ en:{
   ev_timesEdited:'{provider}’s times changed: {what} ({reason})', etHist:'Earlier changes',
   err_OTHER_DAY:'Both times must be on that day.', err_IN_AFTER_OUT:'The clock-in time must be before the sign-off time.', err_IN_FUTURE:'That time has not happened yet.',
   err_VISIT_OUTSIDE:'{memberName}’s visit at {at} would fall outside the new times. Change the visit first, or pick other times.', err_NO_CHANGE:'Nothing changed: the times are the same.', err_STILL_IN:'They are still clocked in. Change the sign-off time after the day ends.',
+  etSugLeft:'The app signed off at {cut}. Suggested: {at}, when {member} left. Change it if needed.', etSugVisit:'The app signed off at {cut}. Suggested: {at}, the last visit. Change it if needed.', etSugNone:'The app signed off at {cut}. Set the time they left.',
   lnCol:'Fix it', lnDay:'Open day', lnDayOf:'Open {name}’s day on Timesheets', lnReviewOf:'Review {name}’s sign-off fix', lnFixOf:'Fix {name}’s sign-off', lnFloor:'Open Floor', lnFloorOf:'Find {name} on the Floor', lnVisits:'Open visits', lnVisitsOf:'Open the visits for that day ({name})', lnRoster:'Add Payroll ID: {name}', lnRosterOf:'Open {name} on the Roster to add a Payroll ID', lnAlready:'Already done. Someone has fixed this.', lnOld:'This day is older than the last 10 days. Open it from Timesheets.',
   tabDay:'Day report', drTitle:'Day report', drDay:'Day', drYesterday:'Yesterday', drFor:'{day} · {site}',
   drSub:'Who did what, by name. Tap a number to jump to the list.', drStillLoading:'Photos and locations are still loading.', drNone:'Nobody worked and no member came on this day.',
@@ -3482,7 +3564,7 @@ en:{
   al_memberLeft:'{member} signed out from {provider} ({reason})', al_memberLeftBy:'{who} recorded that {member} left {provider} ({reason})',
   al_undoMemberLeft:'{who} undid the sign-out of {member}', al_reassign:'{who} moved {member} from {from} to {provider}',
   al_notesDone:'{who} marked notes done for {member}', al_notesUndone:'{who} unticked notes for {member}', al_signOff:'{who} signed off for the day',
-  al_autoSignOff:'{who} ran the auto sign-off: {count} signed off', al_correctionSubmitted:'{who} sent a sign-off fix', al_correctionSubmittedFor:'{who} sent a sign-off fix for {provider}',
+  al_autoSignOff:'{who} ran the auto sign-off: {count} signed off', al_idleSignOff:'{who} signed off {provider}: no member for 30 minutes after the last one left', al_correctionSubmitted:'{who} sent a sign-off fix', al_correctionSubmittedFor:'{who} sent a sign-off fix for {provider}',
   al_correctionDecided_approve:'{who} approved {provider}’s sign-off fix', al_correctionDecided_adjust:'{who} approved {provider}’s sign-off fix with a different time',
   al_correctionDecided_reject:'{who} did not approve {provider}’s sign-off fix', al_coordinatorCorrect:'{who} fixed {provider}’s sign-off', al_other:'{who} made a change',
   al_download:'{who} downloaded {what} ({format})', al_downloadRange:'{who} downloaded {what} ({format}, {range})',
@@ -3784,11 +3866,20 @@ function obStrip(){
 }
 if(outbox.items.length) state = obOverlay(state);
 
+// T-46: a day older than the live window (8 days) is only in the Reports cache; add that provider's day so the
+// local check sees the same rows the server loads.
+function withDay(st, w){
+  const add = {shifts:[], assignments:[], corrections:[]}, has = {};
+  ['shifts','assignments','corrections'].forEach(c => (st[c]||[]).forEach(x => { has[c+':'+x.id] = 1; }));
+  for(const k in rangeCache){ const d = rangeCache[k] && rangeCache[k].data; if(!d) continue;
+    ['shifts','assignments','corrections'].forEach(c => (d[c]||[]).forEach(x => { if(x.providerId === w.providerId && x.date === w.date && !has[c+':'+x.id]){ has[c+':'+x.id] = 1; add[c].push(x); } })); }
+  return Object.assign({}, st, {shifts:(st.shifts||[]).concat(add.shifts), assignments:(st.assignments||[]).concat(add.assignments), corrections:(st.corrections||[]).concat(add.corrections)});
+}
 async function act(action, opts){
   opts = opts || {};
   const now = opts.now != null ? opts.now : Date.now();
   const usedIds = [];
-  const r = E.apply(eff(), action, { now, by: opts.by || byId(), ids: () => { const x = newId(); usedIds.push(x); return x; } });
+  const r = E.apply(opts.withDay ? withDay(eff(), opts.withDay) : eff(), action, { now, by: opts.by || byId(), ids: () => { const x = newId(); usedIds.push(x); return x; } });
   if(!r.ok){ if(!opts.silent) toast(t('err_'+r.code) !== 'err_'+r.code ? t('err_'+r.code, r.params) : t('err_generic'), true); return r; }
   state = E.reduce(state, r.writes);
   if(!opts.noRender) render();
@@ -4266,6 +4357,8 @@ function fixLink(providerId, date, name){
   const sh = (state.shifts||[]).find(x => x.providerId === providerId && x.date === date);
   if(sh && sh.status === 'correction_pending' && sh.correctionId) return {html: `<button class="btn btn-sm primary" data-act="lnReview" data-id="${esc(sh.correctionId)}" aria-label="${esc(t('lnReviewOf',{name}))}">${esc(t('review'))}</button>`};
   if(sh && sh.status === 'auto_signed_off') return {html: `<button class="btn btn-sm primary" data-act="lnFix" data-id="${esc(sh.id)}" aria-label="${esc(t('lnFixOf',{name}))}">${esc(t('fixMyself'))}</button>`};
+  // T-46: a day older than the live window is not in state.shifts; fix it with Edit times instead
+  if(!sh){ const old = etFindShift(providerId, date); if(old && old.status === 'auto_signed_off'){ const l = etLink(providerId, date, name); if(l) return l; } }
   return dayLink(providerId, date, name);
 }
 function dayLink(providerId, date, name){ return {html: `<button class="btn btn-sm btn-line" data-act="lnDay" data-id="${esc(providerId)}" data-date="${esc(date)}" aria-label="${esc(t('lnDayOf',{name}))}">${esc(t('lnDay'))}</button>`}; }
@@ -4313,12 +4406,26 @@ function etWhat(e){
   if(e.toOut != null && e.fromOut !== e.toOut) parts.push(t('etWhatOut',{from:e.fromOut != null ? tm(e.fromOut) : '–', to:tm(e.toOut)}));
   return parts.join(', ');
 }
+// T-46: on a day the app signed off at closing, suggest the time of the provider's last real activity
+function etLastVisit(providerId, date, cutoff){
+  const all = [], seen = {};
+  const add = list => (list||[]).forEach(a => { if(a.providerId === providerId && a.date === date && !seen[a.id]){ seen[a.id] = 1; all.push(a); } });
+  add(state.assignments); for(const k in rangeCache){ const d = rangeCache[k] && rangeCache[k].data; if(d) add(d.assignments); }
+  let best = null, who = null;
+  all.forEach(a => {
+    if(a.acceptedAt && a.acceptedAt <= cutoff && (best == null || a.acceptedAt > best)){ best = a.acceptedAt; who = null; }
+    if(a.endedAt && a.endReason !== 'auto_signoff' && a.endedAt <= cutoff && (best == null || a.endedAt >= best)){ best = a.endedAt; who = a.memberId; }
+  });
+  return best == null ? null : {at: best, memberId: who};
+}
 function etSheet(sh){
   const shf = etFindShift(sh.providerId, sh.date);
   if(!shf || shf.status === 'correction_pending') return null;
   const pr = provider(shf.providerId), f = first(pr.name), open = shf.status === 'clocked_in';
   if(sh.inTime === undefined) sh.inTime = hhmm(shf.clockInAt);
-  if(sh.outTime === undefined) sh.outTime = open || shf.clockOutAt == null ? '' : hhmm(shf.clockOutAt);
+  const auto = shf.status === 'auto_signed_off', sug = auto ? etLastVisit(shf.providerId, shf.date, shf.autoSignedOffAt || shf.clockOutAt) : null;
+  if(sh.outTime === undefined) sh.outTime = open || shf.clockOutAt == null ? '' : hhmm(sug ? sug.at : shf.clockOutAt);
+  if(auto && sh.reason === undefined) sh.reason = 'forgot_sign_off';
   const oIn = shf.origClockInAt != null ? shf.origClockInAt : shf.clockInAt, oOut = shf.origClockOutAt != null ? shf.origClockOutAt : shf.clockOutAt;
   const hist = (shf.edits||[]);
   return `<h2 id="sheet-h">${esc(t('etTitle',{name:pr.name}))}</h2>
@@ -4326,7 +4433,7 @@ function etSheet(sh){
     <dl class="facts num"><dt>${esc(t('rvDay'))}</dt><dd>${esc(fmtDay(shf.date))}</dd></dl>
     ${hist.length ? `<p class="muted" style="font-size:15px">${esc(t('etOrig',{in:tm(oIn), out: oOut != null ? t('etOrigOut',{out:tm(oOut)}) : ''}))}</p>` : ''}
     <div class="field"><label for="et-in">${esc(t('etIn'))}</label><input id="et-in" type="time" data-bind="sheet.inTime" value="${esc(sh.inTime||'')}"></div>
-    ${open ? `<p class="note">${esc(t('etOutOpen'))}</p>` : `<div class="field"><label for="et-out">${esc(t('etOut'))}</label><input id="et-out" type="time" data-bind="sheet.outTime" value="${esc(sh.outTime||'')}"></div>`}
+    ${open ? `<p class="note">${esc(t('etOutOpen'))}</p>` : `<div class="field"><label for="et-out">${esc(t('etOut'))}</label><input id="et-out" type="time" data-bind="sheet.outTime" value="${esc(sh.outTime||'')}">${auto ? `<span class="muted" style="font-size:15px">${esc(sug ? (sug.memberId ? t('etSugLeft',{cut:tm(shf.clockOutAt), member:member(sug.memberId).name, at:tm(sug.at)}) : t('etSugVisit',{cut:tm(shf.clockOutAt), at:tm(sug.at)})) : t('etSugNone',{cut:tm(shf.clockOutAt)}))}</span>` : ''}</div>`}
     <fieldset class="et-reasons"><legend class="group-label">${esc(t('etReason'))}</legend>
     ${E.EDIT_REASONS.map(r => `<button class="opt" aria-pressed="${sh.reason === r}" data-act="etReason" data-v="${r}"><span class="grow">${esc(t('et_'+r))}</span></button>`).join('')}</fieldset>
     <div class="field"><label for="et-comment">${esc(t('etComment',{first:f}))}</label><textarea id="et-comment" data-bind="sheet.comment" class="${sh.badComment?'invalid':''}">${esc(sh.comment||'')}</textarea></div>
@@ -5106,6 +5213,7 @@ function payrollView(){
   const checks = `<section class="panel"><h2>${esc(t('payChecks'))} <span class="pill ${allOk?'pill-serving':'pill-offer'}">${esc(allOk?t('payReady'):t('payNotReady'))}</span></h2><ul class="cklist">
     ${item(C.unverifiedDays===0, t('payCkVerified'), t('payCkVerifiedBad',{n:C.unverifiedDays}))}${C.unverifiedDays||C.openDays?`<li><button class="btn btn-sm primary" data-act="payFix">${esc(t('payFixBtn'))}</button></li>`:''}
     ${item(C.openDays===0, t('payCkOpen'), t('payCkOpenBad',{n:C.openDays}))}
+    ${item(!C.overDays, t('payCkMember'), t('payCkMemberBad',{n:C.overDays, names:(C.overNames||[]).join(', ')}))}
     ${item(!C.missingIds.length, t('payCkIds'), t('payCkIdsBad',{names:C.missingIds.join(', ')}))}${C.missingIds.length ? `<li class="row-actions">${(state.roster.providers||[]).filter(p => C.missingIds.indexOf(p.name) >= 0 && !p.payrollId).map(p => `<button class="btn btn-sm primary" data-act="lnRoster" data-id="${esc(p.id)}" aria-label="${esc(t('lnRosterOf',{name:p.name}))}">${esc(t('lnRoster',{name:p.name}))}</button>`).join('')}</li>` : ''}
   </ul></section>`;
   const h2 = n => (Math.round((n||0)*100)/100).toFixed(2);
@@ -5139,7 +5247,13 @@ function payrollView(){
   const dl = `<section class="panel"><h2>${esc(t('payWhat'))}</h2>${lockBox}
     <div class="dl"><button class="btn ${allOk?'btn-go':'btn-sm btn-line'}" data-act="paySheetPdf" ${(P.lock ? P.lock.employees.length : T.control.employees) ? '' : 'disabled'}>${esc(t('paySheetPdf'))}</button><button class="btn btn-sm btn-line" data-act="paySheetCsv" ${(P.lock ? P.lock.employees.length : T.control.employees) ? '' : 'disabled'}>${esc(t('paySheetCsv'))}</button>${dlAvail === false ? `<span class="muted" style="font-size:15px">${esc(t('dlNone'))}</span>` : ''}</div>
     <p class="muted" style="font-size:15px">${esc(t('paySheetHelp'))}</p></section>`;
-  return `<main class="board">${head}${checks}${emp}${con}${control}${payScheduleBox()}${dl}</main>`;
+  // T-47: paid time vs time with members (counted once per provider), idle = paid time with no member
+  const MT = T.memberTime || {people:[]};
+  const mtRows = MT.people.slice().sort((x, y) => y.idleHours - x.idleHours).map(o => `<tr class="${o.overDays.length ? 'flag' : ''}"><td>${esc(E.lastFirst(o.name))}</td><td class="num">${h2(o.totalHours)}</td><td class="num">${h2(o.withMemberHours)}</td><td class="num">${h2(o.idleHours)}</td><td>${esc(o.overDays.length ? t('mtOver',{days:o.overDays.map(fmtDay).join(', ')}) : t('pcOk'))}</td></tr>`).join('');
+  const mt = MT.people.length ? `<section class="panel"><h2>${esc(t('mtTitle'))}</h2><p class="muted" style="font-size:15px">${esc(t('mtHelp'))}</p>
+    <div class="kpis"><div class="count"><b class="num">${h2(MT.paidHours)}</b><span>${esc(t('mtPaid'))}</span></div><div class="count"><b class="num">${h2(MT.withMemberHours)}</b><span>${esc(t('mtWith'))}</span></div><div class="count"><b class="num">${h2(MT.idleHours)}</b><span>${esc(t('mtIdle'))}</span></div></div>
+    <div class="scroll" tabindex="0" role="region" aria-label="${esc(t('mtTitle'))}"><table class="tbl"><thead><tr><th scope="col">${esc(t('pcName'))}</th><th scope="col">${esc(t('mtPaid'))}</th><th scope="col">${esc(t('mtWith'))}</th><th scope="col">${esc(t('mtIdle'))}</th><th scope="col">${esc(t('mtCheck'))}</th></tr></thead><tbody>${mtRows}</tbody></table></div></section>` : '';
+  return `<main class="board">${head}${checks}${emp}${con}${mt}${control}${payScheduleBox()}${dl}</main>`;
 }
 function payScheduleBox(){
   const d = ui.ps = ui.ps || {payAnchor: config.payAnchor || '2026-09-27', payLength: Number(config.payLength || 14), payDate: config.payDate || ''};
@@ -5683,6 +5797,7 @@ function providerNotices(p, date){
   });
   (state.shifts||[]).forEach(s => {   // T-45: HR or the coordinator changed my times
     if(s.providerId !== p.id) return;
+    if(s.sentHome && s.status === 'signed_off' && !ui.seen['sh:' + s.id + ':' + s.signedOffAt]) out.push({id:'sh:' + s.id + ':' + s.signedOffAt, at:s.signedOffAt, text:t('shNotice',{time:tm(s.signedOffAt)})});
     (s.edits||[]).forEach(e => {
       if(ui.seen[e.id]) return;
       out.push({id:e.id, at:e.at, text:t('etNotice',{who:t(String(e.by||'').startsWith('coord') ? 'etWhoCoord' : 'etWhoHr'), day:fmtDay(s.date), what:etWhat(e), reason:t('et_'+e.reason)})});
@@ -5781,7 +5896,7 @@ function coordView(){
     else if(pv.state === 'auto_signed_off') pill = `<span class="pill pill-offer num">${esc(t('st_auto',{time:tm(d.autoSignedOffAt)}))}</span>`;
     else if(pv.state === 'correction_pending') pill = `<span class="pill pill-offer">${esc(t('st_fix_pending'))}</span>`;
     else if(pv.state === 'corrected') pill = `<span class="pill pill-done num">${esc(t('st_corrected',{time:tm(d.finalEndAt)}))}</span>`;
-    else if(pv.state === 'signed_off') pill = `<span class="pill pill-done num">${esc(t('st_signed_off',{time:tm(d.signedOffAt)}))}</span>`;
+    else if(pv.state === 'signed_off') pill = `<span class="pill pill-done num">${esc(t(d.shift && d.shift.sentHome ? 'st_sent_home' : 'st_signed_off',{time:tm(d.signedOffAt)}))}</span>`;
     else if(pv.state === 'free') pill = `<span class="pill pill-free num">${esc(t('st_free',{dur:dur(pv.freeSinceMin)}))}</span>`;
     else if(pv.state === 'offer') pill = `<span class="pill pill-offer">${esc(t('st_offer'))}</span>`;
     else pill = `<span class="pill pill-serving">${esc(t('st_serving',{n:pv.load}))}</span>`;
@@ -5800,11 +5915,16 @@ function coordView(){
       return `<div class="mitem pending"><div class="grow"><b>${esc(m.name)}</b><small class="num">${esc(t('pendingOffer',{member:first(m.name), dur:dur(E.minutesBetween(a.offeredAt, now))}))}</small></div>
         <button class="btn btn-sm" data-act="withdraw" data-id="${esc(a.id)}">${esc(t('cancelOffer'))}</button></div>`;
     })).join('');
-    const give = d.clockedIn && pv.room > 0 && b.waiting.some(w => (w.need === 2 ? w.open > 0 : !w.offer)) ? `<div class="row-actions"><button class="btn btn-sm" data-act="pickMemberOpen" data-id="${esc(p.id)}">${esc(t('giveMember',{first:first(p.name)}))}</button></div>` : '';
+    const giveBtn = d.clockedIn && pv.room > 0 && b.waiting.some(w => (w.need === 2 ? w.open > 0 : !w.offer)) ? `<button class="btn btn-sm" data-act="pickMemberOpen" data-id="${esc(p.id)}">${esc(t('giveMember',{first:first(p.name)}))}</button>` : '';
+    // T-47: Send home when nobody is with them or offered to them; Undo for 10 minutes after
+    const homeBtn = pv.state === 'free' && !pv.notesMissing && etCan(p.id) ? `<button class="btn btn-sm" data-act="shOpen" data-id="${esc(p.id)}" aria-label="${esc(t('shBtn',{first:p.name}))}">${esc(t('shBtn',{first:first(p.name)}))}</button>` : '';
+    const undoBtn = d.shift && d.shift.sentHome && d.shift.status === 'signed_off' && now - d.shift.signedOffAt <= E.SEND_HOME_UNDO_MIN * 60000 && etCan(p.id) ? `<button class="btn btn-sm" data-act="shUndo" data-id="${esc(p.id)}">${esc(t('shUndo'))}</button>` : '';
+    const give = giveBtn || homeBtn || undoBtn ? `<div class="row-actions">${giveBtn}${homeBtn}${undoBtn}</div>` : '';
     return `<div class="row prov${pv.state==='off'?' off':''}"><div class="row-top"><b>${esc(p.name)}</b>${E.isAdminProvider(p) ? `<span class="pill pill-count">${esc(t('adminTag'))}</span>` : ''}${pill}${loadPill}${notesPill}${meta}</div>
       ${items ? `<div class="mlist">${items}</div>` : ''}${give}</div>`;
   };
-  const working = b.providers.filter(pv => pv.day.clockedIn), notWorking = b.providers.filter(pv => !pv.day.clockedIn);
+  const justHome = pv => !!(pv.day.shift && pv.day.shift.sentHome && pv.day.shift.status === 'signed_off' && now - pv.day.shift.signedOffAt <= E.SEND_HOME_UNDO_MIN * 60000);   // T-47: keep Undo in view
+  const working = b.providers.filter(pv => pv.day.clockedIn || justHome(pv)), notWorking = b.providers.filter(pv => !pv.day.clockedIn && !justHome(pv));
   const provs = (working.length ? working.map(provRow).join('') : `<p class="empty">${esc(t('flNobodyIn'))}</p>`)
     + (notWorking.length ? `<details class="later fl-off"${ui.flOffOpen ? ' open' : ''}><summary data-act="flOffToggle">${esc(t('flNotWorking',{n:notWorking.length}))}</summary>${notWorking.map(provRow).join('')}</details>` : '');
 
@@ -5985,18 +6105,21 @@ function sheetBody(sh){
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
   }
   if(sh.kind === 'et') return etSheet(sh);
+  if(sh.kind === 'sh'){ const p = provider(sh.providerId), f = first(p.name);
+    return `<h2 id="sheet-h">${esc(t('shTitle',{name:p.name}))}</h2><p class="lead">${esc(t('shLead',{first:f, time:tm(Date.now())}))}</p>
+      <div class="sheet-actions"><button class="btn primary" data-act="shGo" data-id="${esc(p.id)}">${esc(t('shGo'))}</button><button class="btn" data-act="close">${esc(t('cancel'))}</button></div>`; }
   if(sh.kind === 'cf'){
     const shf = shiftById(sh.shiftId);
     if(!shf || shf.status !== 'auto_signed_off') return null;
     const pr = provider(shf.providerId), cut = shf.autoSignedOffAt, f = first(pr.name);
     const la = lastActivity(shf.providerId, shf.date, cut);
     if(sh.time === undefined) sh.time = la ? hhmm(la.at) : hhmm(cut);
-    if(sh.keep === undefined) sh.keep = false;
+    if(sh.keep === undefined) sh.keep = !!shf.idleSignOff;
     const lr = latestRejected(shf.id);
     const endAt = sh.keep ? cut : toMs(shf.date, sh.time);
     const visits = (state.assignments||[]).filter(a => a.providerId === shf.providerId && a.date === shf.date && a.status === 'ended');
     return `<h2 id="sheet-h">${esc(t('cfTitle',{name:pr.name}))}</h2>
-      <p class="lead">${esc(lr && lr.status === 'rejected' ? t('cfTextRejected',{first:f, cut:tm(cut)}) : t('cfText',{first:f, cut:tm(cut)}))}</p>
+      <p class="lead">${esc(lr && lr.status === 'rejected' ? t('cfTextRejected',{first:f, cut:tm(cut)}) : t(shf.idleSignOff ? 'cfTextIdle' : 'cfText',{first:f, cut:tm(cut)}))}</p>
       <dl class="facts num"><dt>${esc(t('rvDay'))}</dt><dd>${esc(fmtDay(shf.date))}</dd><dt>${esc(t('rvIn'))}</dt><dd>${esc(tm(shf.clockInAt))}</dd><dt>${esc(t('rvAuto'))}</dt><dd>${esc(tm(cut))}</dd></dl>
       <p class="group-label">${esc(t('rvVisits'))}</p>
       <ul class="done-list" style="margin:0;padding-top:0;border:0">${visits.map(a => `<li><span>${esc(member(a.memberId).name)}<small class="num">${esc(tm(a.acceptedAt))} \u2013 ${esc(tm(a.endedAt))}${a.endReason==='auto_signoff'?' \u00b7 '+esc(t('rvClosed')):''}</small></span></li>`).join('') || `<li>${esc(t('coNoVisits'))}</li>`}</ul>
@@ -6065,6 +6188,11 @@ document.addEventListener('click', async ev => {
     }
     case 'cfOpen': ui.sheet = {kind:'cf', shiftId:d.id}; render(); break;
     case 'cfKeep': ui.sheet.keep = d.v === '1'; render(); break;
+    case 'shOpen': ui.sheet = {kind:'sh', providerId:d.id}; render(); break;
+    case 'shGo': { const p = provider(d.id); const r = await act({type:'sendHome', providerId:d.id}, {silent:true});
+      if(r.ok){ ui.sheet = null; render(); toast(t('shDone',{first:first(p.name)})); } else toast(t('err_'+r.code, r.params||{}), true); break; }
+    case 'shUndo': { const p = provider(d.id); const r = await act({type:'undoSendHome', providerId:d.id}, {silent:true});
+      if(r.ok) toast(t('shUndone',{first:first(p.name)})); else toast(t('err_'+r.code, r.params||{}), true); break; }
     case 'etOpen': { const shf = etFindShift(d.id, d.date); if(!shf){ toast(t('lnOld'), true); break; } if(shf.status === 'correction_pending' && shf.correctionId){ ui.sheet = {kind:'review', correctionId:shf.correctionId}; render(); break; } ui.sheet = {kind:'et', providerId:d.id, date:d.date, _fresh:true}; render(); break; }
     case 'etReason': ui.sheet.reason = d.v; render(); break;
     case 'etSave': {
@@ -6075,7 +6203,7 @@ document.addEventListener('click', async ev => {
       if(!sh.reason){ toast(t('etNeedReason'), true); break; }
       if(!(sh.comment||'').trim()){ sh.badComment = true; render(); toast(t('err_COMMENT_REQUIRED'), true); setTimeout(()=>{ const c = document.getElementById('et-comment'); if(c) c.focus(); }, 60); break; }
       if(sensitiveIn(sh.comment)){ sh.badComment = true; render(); sensitiveToast(); break; }
-      const r = await act({type:'editShiftTimes', providerId:shf.providerId, date:shf.date, clockInAt: inAt !== shf.clockInAt ? inAt : null, clockOutAt: !open && outAt !== shf.clockOutAt ? outAt : null, reason:sh.reason, comment:(sh.comment||'').trim()}, {silent:true});
+      const r = await act({type:'editShiftTimes', providerId:shf.providerId, date:shf.date, clockInAt: inAt !== shf.clockInAt ? inAt : null, clockOutAt: !open && outAt !== shf.clockOutAt ? outAt : null, reason:sh.reason, comment:(sh.comment||'').trim()}, {silent:true, withDay:{providerId:shf.providerId, date:shf.date}});
       if(r.ok){ for(const k in rangeCache) delete rangeCache[k]; ui.sheet = null; render(); toast(t('etSaved',{first:first(provider(shf.providerId).name)})); }
       else toast(t('err_'+r.code, r.params||{}), true);
       break;
