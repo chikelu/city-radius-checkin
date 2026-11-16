@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-XSK2Y2vuxRtNwQZz2DOwTxspaSP35FfkauTOF5gy3hA=' 'sha256-vWhA9Qosw2/mYn4gPu69zbz9U9D5YlDzM4e8i/iWKjw=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-XSK2Y2vuxRtNwQZz2DOwTxspaSP35FfkauTOF5gy3hA=' 'sha256-uml/tsLEoOle6/QidS5q0cpE4utyurxsO4b0w2ZlSBk=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -480,6 +480,73 @@ details.later summary,details.later-vt summary{cursor:pointer;font-weight:700;fo
 .vtr-prov td small{font-size:13px}
 .vtr-det h2{font-size:19px}
 .vtr-det:focus{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---------- T-48 phone-first pass ----------
+   Under 700px: one-row header, one-row tab strips you swipe, no sideways-scrolling tables (each row becomes a card
+   with the action button at the bottom), bigger tap targets, no iOS zoom on inputs, chevrons that never overlap. */
+input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:max(16px,1em)}
+button.count{padding-right:36px}
+button.count::after{top:50%;transform:translateY(-50%)}
+.strip{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:4px 16px}
+.strip::-webkit-scrollbar{display:none}
+.strip>*{flex:none;scroll-snap-align:start}
+.tbl td.td-act .btn{width:100%}
+@media (min-width:701px){
+  .tbl .col-act{position:sticky;right:0;background:var(--surface);box-shadow:-8px 0 8px -8px rgba(0,0,0,.35)}
+  .tbl th.col-act{background:var(--sunk);z-index:1}
+  .tbl tr.flag td.col-act{background:var(--offer-bg)}
+}
+@media (max-width:700px){
+  .top-in{flex-wrap:nowrap;padding:8px 12px;gap:8px}
+  .brand{font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand .mark{flex:none}
+  .top-in .chipbtn{flex:none;min-height:44px;padding:6px 12px;font-size:15px}
+  .board-head h1{font-size:23px}
+  .board{padding:12px 16px calc(60px + env(safe-area-inset-bottom,0px));gap:14px}
+  .phone{padding:14px 16px calc(120px + env(safe-area-inset-bottom,0px))}
+  .tabs,.sites,.seg{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:0 -16px;padding:4px 16px}
+  .tabs::-webkit-scrollbar,.sites::-webkit-scrollbar,.seg::-webkit-scrollbar{display:none}
+  .tabs>*,.sites>*,.seg>*{flex:none}
+  .board-head .sites{margin:0;padding:0;overflow:visible}
+  .panel .tabs,.panel .seg,.panel .sites{margin:0;padding:4px 0}
+  .filters{gap:10px}
+  .filters .field{flex:1 1 100%}
+  .filters select,.filters input[type=date]{width:100%}
+  .timer{flex-wrap:wrap;gap:2px 10px;align-items:baseline}
+  .timer b{font-size:26px;white-space:nowrap}
+  .timer span{font-size:15px}
+  .count b{font-size:26px}
+  .count span{font-size:14px;display:block;line-height:1.25}
+  .scroll-hint{display:none}
+  .scroll{overflow:visible;border:0;background:transparent;border-radius:0}
+  .tbl,.tbl tbody,.tbl tfoot,.tbl tr,.tbl td{display:block}
+  .tbl thead{display:none}
+  .tbl{font-size:16px}
+  .tbl tr{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 14px 10px;margin:0 0 10px}
+  .tbl tr.has-name td:first-child{border-top:1px solid var(--line);font-weight:400;font-size:16px;display:flex;padding:6px 0}
+  .tbl tr.has-name td:first-child::before{display:inline}
+  .tbl td.td-name{order:-1;border-top:0;font-weight:800;font-size:17px;display:block;padding:8px 0 6px}
+  .tbl td.td-name::before{display:none}
+  .tbl td.td-act{order:9}
+  .tbl tr.flag{border-color:var(--offer-line);background:var(--offer-bg)}
+  .tbl tr.flag td{background:transparent}
+  .tbl td{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:6px 0;border:0;border-top:1px solid var(--line);white-space:normal;text-align:left;min-width:0}
+  .tbl td.wrap{min-width:0}
+  .tbl td::before{content:attr(data-l);color:var(--muted);font-size:13px;font-weight:700;flex:none;max-width:45%}
+  .tbl td.r{text-align:right}
+  .tbl td:first-child{border-top:0;font-weight:800;font-size:17px;display:block;padding:8px 0 6px}
+  .tbl td:first-child::before{display:none}
+  .tbl td.td-empty{display:none}
+  .tbl td.td-act{display:block;padding:10px 0 4px}
+  .tbl td.td-act::before{display:none}
+  .tbl td.td-mixed::before{display:block;margin-bottom:4px}
+  .tbl td.td-act .btn,.tbl td.td-act .btn-sm{width:100%;min-height:48px;font-size:17px}
+  .tbl tr.total td:first-child,.tbl tr.tot td:first-child{font-size:15px;color:var(--muted)}
+}
+@media (max-width:400px){
+  .brand{font-size:14px}
+  .count b{font-size:24px}
+}
 </style>
 
 
@@ -3110,7 +3177,7 @@ en:{
   sbe_PW_SSN:'Do not use a Social Security number.', sbe_PW_WEAK:'That password is too easy to guess.', sbe_NAME_FORMAT:'Use 3–32 lowercase letters, numbers, dot, dash or underscore, starting with a letter.',
   sbe_NAME_EMAIL:'Use a username, not an email address.', sbe_NAME_DIGITS:'Usernames cannot hold long numbers (like a phone number or SSN).', sbe_NAME_TAKEN:'That username is already used.',
   sbe_LOGIN_EXISTS:'This person already has a sign-in. Use New PIN instead, or turn off their PIN sign-in first.',
-  pushTitle:'Get an alert for new members', pushLead:'Your phone can show an alert when you are given a member, even when the phone is locked or you are in another app.',
+  pushTitle:'Get an alert for new members', pushLead:'Your phone can show an alert when you are given a member, and remind you to end your day after your last member leaves, even when the phone is locked or you are in another app.',
   pushTurnOn:'Turn on alerts', pushBusy:'Turning on…', pushNotNow:'Not now', pushTurnOff:'Turn off', pushOnLine:'Alerts are on for this phone.',
   pushOnToast:'Alerts are on. You will get one when you are given a member.', pushOffToast:'Alerts are off for this phone.',
   pushFail:'Could not turn on alerts. Check your internet and try again.',
@@ -3271,6 +3338,8 @@ en:{
   signedOffAt:'Signed off', step:'Step {n}', todo:'To do', doneMark:'Done',
   decline_leaving:'I am leaving for the day', declineShort_leaving:'leaving for the day',
   payCkMember:'Time with members is never more than paid time', payCkMemberBad:'{n} days show more time with members than paid time ({names}). Fix the times or the visits first.', mtTitle:'Paid time and time with members', mtHelp:'Time with members counts once per provider, even with two members at a time. Idle is paid time with no member.', mtPaid:'Paid hours', mtWith:'With members', mtIdle:'Idle hours', mtCheck:'Check', mtOver:'More time with members than paid: {days}',
+  alOn:'Alerts on', alOff:'No alerts', alOnPhones:'Alerts on · {n} phones', alCol:'Alerts', alLast:'last sent {when}', alNever:'none sent yet', alHelp:'Alerts on means this provider’s phone can show the new-member and end-of-day reminders. Off means they have not tapped “Turn on alerts” in the app (on iPhone the app must be on the Home Screen first).',
+  flNoAlerts:'{n} of {m} working today have no alerts on their phone. Ask them to tap “Turn on alerts” in the app.', flAlertsAll:'Everyone working today has alerts on.', flAlertsErr:'Could not load who has alerts on.',
   st_signed_off:'Signed off {time}', st_sent_home:'Sent home {time}', shBtn:'Send {first} home', shTitle:'Send {name} home?', shLead:'{first} has no member right now. {first}’s day ends now, at {time}, and counts as signed off. {first} gets a notice on the phone.', shGo:'Send home', shDone:'{first} is signed off for today.', shUndo:'Undo', shUndone:'{first} is clocked in again.', shNotice:'Your coordinator signed you off for today at {time}. You can go home. If this is wrong, tell your coordinator.', ev_sentHome:'{provider} was sent home', ev_undoSendHome:'Send home was undone for {provider}', al_sentHome:'{who} sent {provider} home', al_undoSendHome:'{who} undid Send home for {provider}', err_UNDO_EXPIRED:'Too late to undo. Use Edit times instead.', opt_signed_off:'Signed off for today', inOut:'{start} – {end}',
   notesMissingPill:'Notes missing: {n}', notesDonePill:'Notes done',
   ev_notes_done:'{provider} finished notes for {member}', ev_notes_undone:'{provider} unticked notes for {member}', ev_signOff:'{provider} signed off',
@@ -3913,7 +3982,53 @@ function speak(text){
 
 /* ---------- render ---------- */
 let raf = 0;
+// T-49: who has alerts on (prod build fills this from the server; the demo page shows nothing)
+let alertInfo = () => null, alertsLoaded = () => false, alertsFailed = () => false;
+function alertsLine(working){
+  if(!working.length) return '';
+  if(alertsFailed()) return `<p class="note">${esc(t('flAlertsErr'))}</p>`;
+  if(!alertsLoaded()) return '';
+  const none = working.filter(pv => pv.day.clockedIn && alertInfo(pv.provider.id) && !alertInfo(pv.provider.id).phones).length, m = working.filter(pv => pv.day.clockedIn).length;
+  return none ? `<p class="note" style="margin-bottom:10px">${esc(t('flNoAlerts',{n:none, m}))}</p>` : `<p class="muted" style="font-size:15px;margin:0 0 10px">${esc(t('flAlertsAll'))}</p>`;
+}
+function alertPill(providerId, long){
+  const a = alertInfo(providerId); if(!a) return '';
+  return a.phones ? `<span class="pill pill-serving" title="${esc(t('alHelp'))}">${esc(long ? t('alOnPhones',{n:a.phones}) : t('alOn'))}</span>` : `<span class="pill pill-free" title="${esc(t('alHelp'))}">${esc(t('alOff'))}</span>`;
+}
 function render(){ if(raf) return; raf = requestAnimationFrame(()=>{ raf = 0; draw(); }); }
+// T-48: on phones every table row is a card; each cell carries its column name (data-l), buttons go at the bottom,
+// empty cells are hidden. Pure DOM pass, no effect on wide screens. Also keeps the active tab pill in view.
+function labelTables(root){
+  root.querySelectorAll('table.tbl').forEach(tb => {
+    const ths = [...tb.querySelectorAll('thead th')], hs = ths.map(h => h.textContent.trim());
+    if(!hs.length) return;
+    // the action column (Fix it / Edit) stays in view on wide screens while the rest scrolls sideways
+    const actIdx = hs.findIndex(h => /^(Fix it|Edit|Sign-in)$/.test(h));
+    ths.forEach((h, k) => h.classList.toggle('col-act', k === actIdx));
+    tb.querySelectorAll('tbody tr, tfoot tr').forEach(tr => {
+      let i = 0;
+      [...tr.children].forEach(td => {
+        if(!td.hasAttribute('data-l')) td.setAttribute('data-l', hs[i] || '');
+        td.classList.toggle('col-act', i === actIdx && (td.colSpan || 1) === 1);
+        const txt = td.textContent.trim();
+        td.classList.toggle('td-empty', txt === '' || txt === '–' || txt === '—' || txt === '-');
+        const act = !!td.querySelector('button, a.btn, .btn');
+        td.classList.toggle('td-act', act);
+        td.classList.toggle('td-mixed', act && [...td.childNodes].some(n => n.nodeType === 3 ? !!n.textContent.trim() : !(n.matches && n.matches('button, a.btn, .btn')) && !!n.textContent.trim()));
+        i += td.colSpan || 1;
+      });
+      const nameCell = [...tr.children].find(td => /^(Provider|Member|Name)$/.test(td.getAttribute('data-l') || '') && td.textContent.trim());
+      tr.classList.toggle('has-name', !!nameCell);
+      [...tr.children].forEach(td => td.classList.toggle('td-name', td === nameCell));
+    });
+  });
+  if(window.innerWidth <= 700) root.querySelectorAll('.tabs, .sites, .seg').forEach(strip => {
+    const on = strip.querySelector('[aria-pressed="true"]'); if(!on) return;
+    const l = on.offsetLeft - strip.offsetLeft, r = l + on.offsetWidth;
+    if(l < strip.scrollLeft + 16) strip.scrollLeft = Math.max(0, l - 16);
+    else if(r > strip.scrollLeft + strip.clientWidth - 16) strip.scrollLeft = r - strip.clientWidth + 16;
+  });
+}
 let lastApp = '', lastSheet = '';
 function draw(){
   const app = document.getElementById('app');
@@ -3930,7 +4045,7 @@ function draw(){
   if(html !== lastApp && (force || !(typing && app.contains(document.activeElement)))){
     const ae = document.activeElement, key = ae && ae.dataset && ae.dataset.act ? ae.dataset.act + '|' + (ae.dataset.id || ae.dataset.member || ae.dataset.role || '') : null;
     const inApp = ae && app.contains(ae);
-    app.innerHTML = html; lastApp = html;
+    app.innerHTML = html; lastApp = html; labelTables(app);
     if(key && inApp){ const back = [...app.querySelectorAll('[data-act]')].find(x => x.dataset.act + '|' + (x.dataset.id || x.dataset.member || x.dataset.role || '') === key); if(back) back.focus({preventScroll:true}); }
     if(force){ const q = document.getElementById(typeof force === 'string' ? force : 'ro-q'); if(q){ q.focus({preventScroll:true}); const n = q.value.length; try{ q.setSelectionRange(n, n); }catch(e){} } }
     if(ui.focusTop){ ui.focusTop = false; const h = app.querySelector('main h1'); if(h){ h.setAttribute('tabindex','-1'); h.focus({preventScroll:true}); } }
@@ -4060,7 +4175,7 @@ function providerView(){
     <div class="who"><div><h1>${esc(t('hi',{name:first(p.name)}))}</h1><p>${esc(site?site.name:'')}</p></div></div>
     
     ${fixCards(p, false)}${notices}${status}${'' + (BACKEND === 'supabase' ? PUSH.box('top') : '')}${offers}${visits}${day.autoSignedOff ? '' : notesTodo}${todayBox}${'' + (BACKEND === 'supabase' ? PUSH.box('bottom') : '')}
-    ${day.clockedIn ? `<button class="btn btn-line" data-act="checkoutOpen">${I.door}${esc(t('endDay'))}</button>` : ''}
+    ${day.clockedIn ? `<button class="btn ${!day.active.length && !day.offers.length && day.finished.length ? 'btn-go' : 'btn-line'}" data-act="checkoutOpen">${I.door}${esc(t('endDay'))}</button>` : ''}
     <button class="btn btn-line" data-act="myOpen">${I.board}${esc(t('myTime'))}</button>
     <button class="btn btn-quiet change" data-act="switch">${esc(t('notYou',{first:first(p.name)}))}</button>
   </main>`;
@@ -5009,7 +5124,7 @@ function rosterView(){
       <td>${esc(isP ? t('kind_'+(o.kind||'employee')) : (o.program || '–'))}</td>
       <td>${o.active === false ? `<span class="pill">${esc(t('roInactive'))}</span>` : `<span class="pill pill-serving">${esc(t('roActive'))}</span>`}</td>
       <td class="num muted">${esc((isP ? o.payrollId : o.clientId) || '–')}${isP && (o.kind||'employee')==='employee' && !o.payrollId && o.active !== false ? ' <b class="att-bang" aria-hidden="true">!</b>' : ''}</td>
-      ${'' + (isP ? SBA.roCell(o) : '')}<td><button class="btn btn-sm btn-line" data-act="roEdit" data-id="${esc(o.id)}">${esc(t('roEdit'))}</button></td></tr>`).join('');
+      ${'' + (isP ? SBA.roCell(o) + ALERTS.cell(o) : '')}<td><button class="btn btn-sm btn-line" data-act="roEdit" data-id="${esc(o.id)}">${esc(t('roEdit'))}</button></td></tr>`).join('');
   return `<main class="board">
     <div class="board-head"><h1>${esc(t('roTitle'))}</h1></div>${hrTabs()}${'' + SBA.secretBox()}
     <section class="panel"><p>${esc(t('roSub'))}</p>
@@ -5021,7 +5136,7 @@ function rosterView(){
     <section class="panel"><h2>${esc(t('roChecks'))}</h2>${issues.length ? `<ul class="ro-issues">${issues.map(i => `<li>${esc(t('roi_'+i.code,{names:i.names.join(', ')}))}</li>`).join('')}</ul>` : `<p class="muted">${esc(t('roChecksNone'))}</p>`}</section>
     ${rosterForm()}
     <section class="panel"><div class="row-actions" style="justify-content:space-between"><span class="muted">${esc(t('roCount',{n:rows.length}))}</span>${r.edit ? '' : `<button class="btn btn-sm primary" data-act="roAdd">${esc(t(isP?'roAddProvider':'roAddMember'))}</button>`}</div>
-      ${rows.length ? `<p class="scroll-hint">${esc(t('scrollHint'))}</p><div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl ro-tbl"><thead><tr>${head.map(k => `<th scope="col">${esc(t(k))}</th>`).join('')}${'' + (isP ? `<th scope="col">${esc(t('sbColSignin'))}</th>` : '')}<th scope="col"><span class="sr">${esc(t('roEdit'))}</span></th></tr></thead><tbody>${body}</tbody></table></div>` : `<p class="empty">${esc(t('roNone'))}</p>`}
+      ${rows.length ? `<p class="scroll-hint">${esc(t('scrollHint'))}</p><div class="scroll" tabindex="0" role="region" aria-label="${esc(t('scrollRegion'))}"><table class="tbl ro-tbl"><thead><tr>${head.map(k => `<th scope="col">${esc(t(k))}</th>`).join('')}${'' + (isP ? `<th scope="col">${esc(t('sbColSignin'))}</th><th scope="col">${esc(t('alCol'))}</th>` : '')}<th scope="col"><span class="sr">${esc(t('roEdit'))}</span></th></tr></thead><tbody>${body}</tbody></table></div>` : `<p class="empty">${esc(t('roNone'))}</p>`}
     </section>
     ${rosterImportBox(kind)}${'' + (isP ? SBA.bulkBox() + SBA.staffBox() : '')}
   </main>`;
@@ -5920,7 +6035,7 @@ function coordView(){
     const homeBtn = pv.state === 'free' && !pv.notesMissing && etCan(p.id) ? `<button class="btn btn-sm" data-act="shOpen" data-id="${esc(p.id)}" aria-label="${esc(t('shBtn',{first:p.name}))}">${esc(t('shBtn',{first:first(p.name)}))}</button>` : '';
     const undoBtn = d.shift && d.shift.sentHome && d.shift.status === 'signed_off' && now - d.shift.signedOffAt <= E.SEND_HOME_UNDO_MIN * 60000 && etCan(p.id) ? `<button class="btn btn-sm" data-act="shUndo" data-id="${esc(p.id)}">${esc(t('shUndo'))}</button>` : '';
     const give = giveBtn || homeBtn || undoBtn ? `<div class="row-actions">${giveBtn}${homeBtn}${undoBtn}</div>` : '';
-    return `<div class="row prov${pv.state==='off'?' off':''}"><div class="row-top"><b>${esc(p.name)}</b>${E.isAdminProvider(p) ? `<span class="pill pill-count">${esc(t('adminTag'))}</span>` : ''}${pill}${loadPill}${notesPill}${meta}</div>
+    return `<div class="row prov${pv.state==='off'?' off':''}"><div class="row-top"><b>${esc(p.name)}</b>${E.isAdminProvider(p) ? `<span class="pill pill-count">${esc(t('adminTag'))}</span>` : ''}${pill}${loadPill}${notesPill}${d.clockedIn ? alertPill(p.id) : ''}${meta}</div>
       ${items ? `<div class="mlist">${items}</div>` : ''}${give}</div>`;
   };
   const justHome = pv => !!(pv.day.shift && pv.day.shift.sentHome && pv.day.shift.status === 'signed_off' && now - pv.day.shift.signedOffAt <= E.SEND_HOME_UNDO_MIN * 60000);   // T-47: keep Undo in view
@@ -5959,7 +6074,7 @@ function coordView(){
     ${fixN ? fixSec.replace('fl-sec"', 'fl-sec fl-fix-top"') : fixSec}
     <div class="cols">
       <section class="panel fl-sec" data-fl="wait" id="fl-wait"><h2 tabindex="-1">${esc(t('cWaiting'))} <span class="pill pill-count num">${b.waiting.length}</span></h2>${waiting}${later}</section>
-      <section class="panel fl-sec" data-fl="prov" id="fl-prov"><h2 tabindex="-1">${esc(t('providers'))} <span class="pill pill-count num">${working.length}</span></h2>${provs}</section>
+      <section class="panel fl-sec" data-fl="prov" id="fl-prov"><h2 tabindex="-1">${esc(t('providers'))} <span class="pill pill-count num">${working.length}</span></h2>${alertsLine(working)}${provs}</section>
     </div>
     <section class="panel fl-sec" data-fl="log" id="fl-log"><h2 tabindex="-1">${esc(t('activity'))}</h2>${log}</section>
     </div>
@@ -7043,6 +7158,30 @@ const GEOS = {
     return this.rows;
   }
 };
+// T-49: who has alerts on. One yes/no per provider from the server (never endpoints or keys); refreshed every 5 minutes.
+const ALERTS = {
+  rows: null, busy: false, err: false, at: 0,
+  get(){
+    const stale = Date.now() - this.at > 5 * 60000;
+    if((!this.rows || stale) && !this.busy && SB.client && ui.role !== 'provider'){
+      this.busy = true;
+      SB.client.rpc('vh_alert_status').then(r => {
+        this.busy = false; this.at = Date.now();
+        if(r.error){ this.err = true; } else { this.err = false; this.rows = {}; (r.data || []).forEach(x => { this.rows[x.provider_id] = {phones: x.phones || 0, last: x.last_sent_at}; }); }
+        render();
+      }, () => { this.busy = false; this.at = Date.now(); this.err = true; render(); });
+    }
+    return this.rows;
+  },
+  cell(o){
+    const a = this.get() && this.rows[o.id];
+    if(!a) return `<td class="muted">${this.err ? '!' : '…'}</td>`;
+    const when = a.last ? t('alLast',{when: fmtDay(String(a.last).slice(0,10))}) : t('alNever');
+    return `<td><div class="sb-cell">${alertPill(o.id, true)}<span class="muted" style="font-size:14px">${esc(when)}</span></div></td>`;
+  }
+};
+alertInfo = id => { const r = ALERTS.get(); return r ? (r[id] || {phones:0, last:null}) : null; };
+alertsLoaded = () => !!ALERTS.get(); alertsFailed = () => !ALERTS.rows && ALERTS.err;
 const GEO_ROUGH_M = 500;   // a reading less accurate than this cannot tell at site from away
 const geoRough = x => !!x && x.status === 'away' && (x.accuracy_m || 0) > GEO_ROUGH_M;
 function geoDist(m){ return m == null ? '' : m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km'; }
