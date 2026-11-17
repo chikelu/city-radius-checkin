@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-XSK2Y2vuxRtNwQZz2DOwTxspaSP35FfkauTOF5gy3hA=' 'sha256-uml/tsLEoOle6/QidS5q0cpE4utyurxsO4b0w2ZlSBk=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-P1B0EQShDgjKoY1H6yu3QOUwLFFYhgwWCpS3VEMnMpI=' 'sha256-0Y0w/VK7Wv8wVpejyiiEWZjEh0IqcrdA+IVi9qLF6kM=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -580,6 +580,8 @@ button.count::after{top:50%;transform:translateY(-50%)}
   var IDLE_REMIND_MIN = 5, IDLE_SIGNOFF_MIN = 35;
   // T-47: a coordinator can undo "Send home" for 10 minutes
   var SEND_HOME_UNDO_MIN = 10;
+  // T-50: a provider can say "Not with me" for 15 minutes after a coordinator starts a visit for them
+  var NOT_WITH_ME_MIN = 15;
   // Who is idle: clocked in, nobody with them or offered to them, and their last member left. -> { shift, lastLeftAt } | null
   function idleInfo(state, sh) {
     if (!sh || sh.status !== 'clocked_in') return null;
@@ -965,6 +967,32 @@ button.count::after{top:50%;transform:translateY(-50%)}
       }
       var upd = withFields(asg, { status: 'active', acceptedAt: ctx.now });
       var ev = makeEvent(ctx, date, 'accept', { siteId: asg.siteId, memberId: asg.memberId, providerId: asg.providerId, assignmentId: asg.id });
+      return done([{ col: 'assignments', id: upd.id, doc: upd }], ev);
+    },
+
+    // T-50: the coordinator starts the visit for the provider (the member is already with them). Same checks as the
+    // provider's own Accept. The record says who started it; the provider can say "Not with me" for 15 minutes.
+    startForProvider: function (state, a, ctx, date) {
+      var asg = findById(state.assignments, a.assignmentId);
+      if (!asg) return fail('NOT_FOUND', { what: 'assignment', id: a.assignmentId });
+      if (asg.status !== 'offered') return fail('NOT_OFFERED', { status: asg.status, memberName: memberName(state, asg.memberId) });
+      var sh = shiftFor(state, asg.providerId, asg.date);
+      if (!isClockedIn(sh) || sh.siteId !== asg.siteId) {
+        return fail('PROVIDER_NOT_CLOCKED_IN', { providerName: providerName(state, asg.providerId), siteName: siteName(state, asg.siteId) });
+      }
+      var upd = withFields(asg, { status: 'active', acceptedAt: ctx.now, startedBy: ctx.by == null ? 'staff' : ctx.by });
+      var ev = makeEvent(ctx, date, 'startedByStaff', { siteId: asg.siteId, memberId: asg.memberId, providerId: asg.providerId, assignmentId: asg.id });
+      return done([{ col: 'assignments', id: upd.id, doc: upd }], ev);
+    },
+
+    // T-50: "Not with me" — within 15 minutes of a staff-started visit, the provider undoes it; the member is waiting again.
+    notWithMe: function (state, a, ctx, date) {
+      var asg = findById(state.assignments, a.assignmentId);
+      if (!asg) return fail('NOT_FOUND', { what: 'assignment', id: a.assignmentId });
+      if (asg.status !== 'active' || !asg.startedBy) return fail('NOTHING_TO_DO', { memberName: memberName(state, asg.memberId) });
+      if (ctx.now > asg.acceptedAt + NOT_WITH_ME_MIN * 60000) return fail('UNDO_EXPIRED', { memberName: memberName(state, asg.memberId), minutes: NOT_WITH_ME_MIN });
+      var upd = withFields(asg, { status: 'withdrawn', endedAt: ctx.now, endedBy: ctx.by == null ? null : ctx.by, withdrawReason: 'not_with_me' });
+      var ev = makeEvent(ctx, date, 'notWithMe', { siteId: asg.siteId, memberId: asg.memberId, providerId: asg.providerId, assignmentId: asg.id });
       return done([{ col: 'assignments', id: upd.id, doc: upd }], ev);
     },
 
@@ -3104,7 +3132,7 @@ button.count::after{top:50%;transform:translateY(-50%)}
     ERROR_CODES: ERROR_CODES,
     CORRECTION_REASONS: CORRECTION_REASONS.slice(),
     EDIT_REASONS: EDIT_REASONS.slice(),
-    SEND_HOME_UNDO_MIN: SEND_HOME_UNDO_MIN, IDLE_REMIND_MIN: IDLE_REMIND_MIN, IDLE_SIGNOFF_MIN: IDLE_SIGNOFF_MIN, idleDue: idleDue,
+    SEND_HOME_UNDO_MIN: SEND_HOME_UNDO_MIN, NOT_WITH_ME_MIN: NOT_WITH_ME_MIN, IDLE_REMIND_MIN: IDLE_REMIND_MIN, IDLE_SIGNOFF_MIN: IDLE_SIGNOFF_MIN, idleDue: idleDue,
     CORRECTION_WINDOW_DAYS: CORRECTION_WINDOW_DAYS,
     cutoffFor: cutoffFor,
     businessDaysBetween: businessDaysBetween,
@@ -3340,6 +3368,9 @@ en:{
   payCkMember:'Time with members is never more than paid time', payCkMemberBad:'{n} days show more time with members than paid time ({names}). Fix the times or the visits first.', mtTitle:'Paid time and time with members', mtHelp:'Time with members counts once per provider, even with two members at a time. Idle is paid time with no member.', mtPaid:'Paid hours', mtWith:'With members', mtIdle:'Idle hours', mtCheck:'Check', mtOver:'More time with members than paid: {days}',
   alOn:'Alerts on', alOff:'No alerts', alOnPhones:'Alerts on · {n} phones', alCol:'Alerts', alLast:'last sent {when}', alNever:'none sent yet', alHelp:'Alerts on means this provider’s phone can show the new-member and end-of-day reminders. Off means they have not tapped “Turn on alerts” in the app (on iPhone the app must be on the Home Screen first).',
   flNoAlerts:'{n} of {m} working today have no alerts on their phone. Ask them to tap “Turn on alerts” in the app.', flAlertsAll:'Everyone working today has alerts on.', flAlertsErr:'Could not load who has alerts on.',
+  giveStartSwitch:'Start the visit now — {first} is already with them', startForBtn:'Start for them', startedByStaffTag:'Started by {who}', startedForToast:'{member} is with {provider} now.',
+  nwmLead:'Your coordinator started this visit for you.', nwmBtn:'Not with me', nwmDone:'{first} is back on the waiting list. Tell your coordinator.', nwmHelp:'Tap within {n} minutes if {first} is not with you.',
+  ev_startedByStaff:'{provider} started with {member} (by coordinator)', ev_notWithMe:'{provider}: {member} was not with them — back to waiting', al_startedByStaff:'{who} started {member} with {provider}', al_notWithMe:'{who} said {member} was not with them',
   st_signed_off:'Signed off {time}', st_sent_home:'Sent home {time}', shBtn:'Send {first} home', shTitle:'Send {name} home?', shLead:'{first} has no member right now. {first}’s day ends now, at {time}, and counts as signed off. {first} gets a notice on the phone.', shGo:'Send home', shDone:'{first} is signed off for today.', shUndo:'Undo', shUndone:'{first} is clocked in again.', shNotice:'Your coordinator signed you off for today at {time}. You can go home. If this is wrong, tell your coordinator.', ev_sentHome:'{provider} was sent home', ev_undoSendHome:'Send home was undone for {provider}', al_sentHome:'{who} sent {provider} home', al_undoSendHome:'{who} undid Send home for {provider}', err_UNDO_EXPIRED:'Too late to undo. Use Edit times instead.', opt_signed_off:'Signed off for today', inOut:'{start} – {end}',
   notesMissingPill:'Notes missing: {n}', notesDonePill:'Notes done',
   ev_notes_done:'{provider} finished notes for {member}', ev_notes_undone:'{provider} unticked notes for {member}', ev_signOff:'{provider} signed off',
@@ -4150,8 +4181,9 @@ function providerView(){
   const visits = day.active.length ? `<h2 class="sec-title">${esc(t('withYou'))}</h2>` + day.active.map(a => {
     const m = member(a.memberId);
     return `<article class="visit">
-      <div class="visit-top"><span class="avatar">${esc(initials(m.name))}</span><div><p class="name">${esc(m.name)}</p><p class="since">${esc(t('since',{time:tm(a.acceptedAt)}))}</p></div></div>
+      <div class="visit-top"><span class="avatar">${esc(initials(m.name))}</span><div><p class="name">${esc(m.name)}</p><p class="since">${esc(t('since',{time:tm(a.acceptedAt)}))}${a.startedBy ? ' · ' + esc(t('nwmLead')) : ''}</p></div></div>
       <div class="timer"><b class="num">${esc(dur(E.visitMinutes(a, now)))}</b><span>${esc(t('timeWith'))}</span></div>
+      ${a.startedBy && now - a.acceptedAt <= E.NOT_WITH_ME_MIN * 60000 ? `<button class="btn btn-quiet" data-act="notWithMe" data-id="${esc(a.id)}" aria-describedby="nwm-${esc(a.id)}">${esc(t('nwmBtn'))}</button><p class="muted" id="nwm-${esc(a.id)}" style="font-size:15px;margin:-4px 0 8px">${esc(t('nwmHelp',{n:E.NOT_WITH_ME_MIN, first:first(m.name)}))}</p>` : ''}
       <button class="btn btn-line" data-act="leaveOpen" data-id="${esc(a.id)}">${I.door}${esc(t('leaving',{first:first(m.name)}))}</button>
       ${E.isAdminProvider(me()) ? '' : `<button class="btn btn-quiet" data-act="handOpen" data-id="${esc(a.id)}">${esc(t('handBtn',{first:first(m.name)}))}</button>`}
     </article>`;
@@ -5961,6 +5993,7 @@ function coordView(){
       const a = al.assignment, m = member(a.memberId), pr = provider(a.providerId);
       return `<div class="alert"><p>${esc(t('alertOffer',{provider:pr.name, member:m.name, dur:dur(al.min)}))}</p>
         <div class="row-actions"><button class="btn btn-sm" data-act="withdraw" data-id="${esc(a.id)}">${esc(t('cancelOffer'))}</button>
+        ${etCan(a.providerId) ? `<button class="btn btn-sm" data-act="startFor" data-id="${esc(a.id)}">${esc(t('startForBtn'))}</button>` : ''}
         <button class="btn btn-sm primary" data-act="moveOpen" data-member="${esc(a.memberId)}">${esc(t('giveElse'))}</button></div></div>`;
     }
     if(al.kind === 'correction_pending' && al.correction){
@@ -5993,7 +6026,7 @@ function coordView(){
     const actions = pair
       ? (w.open > 0 ? `<button class="btn btn-sm primary" data-act="assignOpen" data-member="${esc(m.id)}">${esc(t((w.withNow.length + (w.offers||[]).length) ? 'giveSecond' : 'giveTo'))}</button>` : '')
       : w.offer
-      ? `<button class="btn btn-sm" data-act="withdraw" data-id="${esc(w.offer.id)}">${esc(t('cancelOffer'))}</button><button class="btn btn-sm primary" data-act="moveOpen" data-member="${esc(m.id)}">${esc(t('giveElse'))}</button>`
+      ? `<button class="btn btn-sm" data-act="withdraw" data-id="${esc(w.offer.id)}">${esc(t('cancelOffer'))}</button>${etCan(w.offer.providerId) ? `<button class="btn btn-sm" data-act="startFor" data-id="${esc(w.offer.id)}">${esc(t('startForBtn'))}</button>` : ''}<button class="btn btn-sm primary" data-act="moveOpen" data-member="${esc(m.id)}">${esc(t('giveElse'))}</button>`
       : `<button class="btn btn-sm primary" data-act="assignOpen" data-member="${esc(m.id)}">${esc(t('giveTo'))}</button>`;
     const pairPill = pair ? `<span class="pill pill-offer num">${esc(t('pairPill',{n:w.withNow.length}))}</span>` : '';
     return `<div class="row${w.offer?' row-pending':''}">
@@ -6022,13 +6055,13 @@ function coordView(){
       const m = member(a.memberId);
       const mate = E.staffNeedOf(m) === 2 ? E.currentAssignments(eff(), a.memberId, date).filter(x => x.providerId !== p.id).map(x => first(provider(x.providerId).name)) : [];
       const pairTag = E.staffNeedOf(m) === 2 ? ` <span class="pill pill-offer">${esc(t('pairTag'))}</span>` : '';
-      return `<div class="mitem"><div class="grow"><b>${esc(m.name)}</b>${pairTag}<small class="num">${esc(t('coordSince',{provider:first(p.name), time:tm(a.acceptedAt)}))} · ${esc(dur(E.visitMinutes(a, now)))}${mate.length ? ' · ' + esc(t('pairAlso',{names:mate.join(', ')})) : ''}</small></div>
+      return `<div class="mitem"><div class="grow"><b>${esc(m.name)}</b>${pairTag}${a.startedBy ? `<span class="pill pill-count">${esc(t('startedByStaffTag',{who: a.startedBy === 'hr' || /^hr/.test(a.startedBy) ? 'HR' : 'coordinator'}))}</span>` : ''}<small class="num">${esc(t('coordSince',{provider:first(p.name), time:tm(a.acceptedAt)}))} · ${esc(dur(E.visitMinutes(a, now)))}${mate.length ? ' · ' + esc(t('pairAlso',{names:mate.join(', ')})) : ''}</small></div>
         <button class="btn btn-sm" data-act="moveOpen" data-member="${esc(a.memberId)}" data-from="${esc(p.id)}">${esc(t('move'))}</button>
         <button class="btn btn-sm" data-act="coordLeaveOpen" data-id="${esc(a.id)}">${esc(t('left'))}</button></div>`;
     }).concat(d.offers.map(a => {
       const m = member(a.memberId);
       return `<div class="mitem pending"><div class="grow"><b>${esc(m.name)}</b><small class="num">${esc(t('pendingOffer',{member:first(m.name), dur:dur(E.minutesBetween(a.offeredAt, now))}))}</small></div>
-        <button class="btn btn-sm" data-act="withdraw" data-id="${esc(a.id)}">${esc(t('cancelOffer'))}</button></div>`;
+        ${etCan(a.providerId) ? `<button class="btn btn-sm" data-act="startFor" data-id="${esc(a.id)}">${esc(t('startForBtn'))}</button>` : ''}<button class="btn btn-sm" data-act="withdraw" data-id="${esc(a.id)}">${esc(t('cancelOffer'))}</button></div>`;
     })).join('');
     const giveBtn = d.clockedIn && pv.room > 0 && b.waiting.some(w => (w.need === 2 ? w.open > 0 : !w.offer)) ? `<button class="btn btn-sm" data-act="pickMemberOpen" data-id="${esc(p.id)}">${esc(t('giveMember',{first:first(p.name)}))}</button>` : '';
     // T-47: Send home when nobody is with them or offered to them; Undo for 10 minutes after
@@ -6189,6 +6222,7 @@ function sheetBody(sh){
       + (E.staffNeedOf(m) === 2 ? ' ' + (sh.kind === 'assign' && others.length ? t('pairSecond',{first:f, provider:provider(others[0].providerId).name}) : t('pairNeeds',{first:f})) : '');
     return `<h2 id="sheet-h">${esc(t(sh.kind==='move'?'moveTitle':'assignTitle',{name:m.name}))}</h2>
       <p class="note">${esc(note)}</p>
+      ${sh.kind === 'assign' ? `<label class="switch"><input type="checkbox" data-act="giveStart" ${sh.start ? 'checked' : ''}>${esc(t('giveStartSwitch',{first:first(m.name)}))}</label>` : ''}
       ${sheetSearch(sh, opts.map(o => o.p.name), t('qProviders'))}
       ${opts.map(o => `<button class="opt" ${o.ok?'':'disabled'}${qHit(o.p.name, sh.q)?'':' hidden'} data-qname="${esc(o.p.name)}" data-act="${sh.kind==='move'?'moveDo':'assignDo'}" data-id="${esc(o.p.id)}"><span class="avatar">${esc(initials(o.p.name))}</span><span class="grow">${esc(o.p.name)}<small class="num">${esc(o.sub)}</small></span></button>`).join('')}
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
@@ -6254,6 +6288,7 @@ function sheetBody(sh){
     const ws = b.waiting.filter(w => (w.need === 2 ? w.open > 0 && !w.withNow.concat(w.offers||[]).some(a => a.providerId === sh.providerId) : !w.offer));
     return `<h2 id="sheet-h">${esc(t('pickMemberTitle',{name:p.name}))}</h2>
       <p class="note">${esc(t('assignNoteAny'))}</p>
+      ${etCan(p.id) ? `<label class="switch"><input type="checkbox" data-act="giveStart" ${sh.start ? 'checked' : ''}>${esc(t('giveStartSwitch',{first:first(p.name)}))}</label>` : ''}
       ${ws.length ? sheetSearch(sh, ws.map(w => w.member.name), t('qMembers')) : ''}
       ${ws.length ? ws.map(w => `<button class="opt"${qHit(w.member.name, sh.q)?'':' hidden'} data-qname="${esc(w.member.name)}" data-act="pickMemberDo" data-member="${esc(w.member.id)}"><span class="avatar">${esc(initials(w.member.name))}</span><span class="grow">${esc(w.member.name)}<small class="num">${esc(t('waitingFor',{dur:dur(w.waitMin)}))}${w.need === 2 ? ' · ' + esc(t('pairPill',{n:w.withNow.length})) : ''}</small></span></button>`).join('') : `<p class="empty">${esc(t('noneWaiting'))}</p>`}
       <button class="btn btn-quiet" data-act="close">${esc(t('cancel'))}</button>`;
@@ -6491,14 +6526,27 @@ document.addEventListener('click', async ev => {
     case 'assignOpen': ui.sheet = {kind:'assign', memberId:d.member}; render(); break;
     case 'moveOpen': ui.sheet = {kind:'move', memberId:d.member, fromProviderId:d.from || null}; render(); break;
     case 'pickMemberOpen': ui.sheet = {kind:'pickMember', providerId:d.id}; render(); break;
+    case 'giveStart': { if(ui.sheet) ui.sheet.start = !ui.sheet.start; break; }
     case 'assignDo': case 'pickMemberDo': {
       const memberId = k === 'assignDo' ? ui.sheet.memberId : d.member;
       const providerId = k === 'assignDo' ? d.id : ui.sheet.providerId;
+      const start = !!(ui.sheet && ui.sheet.start) && etCan(providerId);
       const r = await act({type:'offer', memberId, providerId});
       ui.sheet = null; render();
-      if(r.ok) toast(t('offerToast',{first:first(member(memberId).name), provider:provider(providerId).name}));
+      if(!r.ok) break;
+      if(start){   // T-50: the coordinator starts the visit too; if that part fails, the offer stays and the message says why
+        const off = (r.writes || []).find(w => w.col === 'assignments'); const asgId = off ? off.id : null;
+        const r2 = asgId ? await act({type:'startForProvider', assignmentId: asgId}, {silent:true}) : {ok:false, code:'NOT_FOUND'};
+        if(r2.ok){ toast(t('startedForToast',{member:member(memberId).name, provider:provider(providerId).name})); break; }
+        toast(t('err_'+r2.code, r2.params||{}), true); break;
+      }
+      toast(t('offerToast',{first:first(member(memberId).name), provider:provider(providerId).name}));
       break;
     }
+    case 'startFor': { const a = state.assignments.find(x => x.id === d.id); const r = await act({type:'startForProvider', assignmentId:d.id}, {silent:true});
+      if(r.ok && a) toast(t('startedForToast',{member:member(a.memberId).name, provider:provider(a.providerId).name})); else if(!r.ok) toast(t('err_'+r.code, r.params||{}), true); break; }
+    case 'notWithMe': { const a = state.assignments.find(x => x.id === d.id); const r = await act({type:'notWithMe', assignmentId:d.id}, {silent:true});
+      if(r.ok && a) toast(t('nwmDone',{first:first(member(a.memberId).name)})); else if(!r.ok) toast(t('err_'+r.code, r.params||{}), true); break; }
     case 'moveDo': {
       const memberId = ui.sheet.memberId;
       const fromP = ui.sheet.fromProviderId; const r = await act(fromP ? {type:'reassign', memberId, fromProviderId:fromP, toProviderId:d.id} : {type:'reassign', memberId, toProviderId:d.id});
