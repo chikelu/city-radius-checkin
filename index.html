@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-P1B0EQShDgjKoY1H6yu3QOUwLFFYhgwWCpS3VEMnMpI=' 'sha256-0Y0w/VK7Wv8wVpejyiiEWZjEh0IqcrdA+IVi9qLF6kM=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-P1B0EQShDgjKoY1H6yu3QOUwLFFYhgwWCpS3VEMnMpI=' 'sha256-1oGff4nSklTbXQEiQB2Ak7qiExFp1Wr+W2yQPWihU/Y=' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://ddlyuiiiaxsgpinxtucx.supabase.co; connect-src https://ddlyuiiiaxsgpinxtucx.supabase.co wss://ddlyuiiiaxsgpinxtucx.supabase.co; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
@@ -3371,6 +3371,7 @@ en:{
   giveStartSwitch:'Start the visit now — {first} is already with them', startForBtn:'Start for them', startedByStaffTag:'Started by {who}', startedForToast:'{member} is with {provider} now.',
   nwmLead:'Your coordinator started this visit for you.', nwmBtn:'Not with me', nwmDone:'{first} is back on the waiting list. Tell your coordinator.', nwmHelp:'Tap within {n} minutes if {first} is not with you.',
   ev_startedByStaff:'{provider} started with {member} (by coordinator)', ev_notWithMe:'{provider}: {member} was not with them — back to waiting', al_startedByStaff:'{who} started {member} with {provider}', al_notWithMe:'{who} said {member} was not with them',
+  cfOpenAtClose:'{members} was still with {first} at {cut} in the app, so the app can’t tell when {first} left. Ask {first} or check the sign-out sheet, then enter the time.',
   st_signed_off:'Signed off {time}', st_sent_home:'Sent home {time}', shBtn:'Send {first} home', shTitle:'Send {name} home?', shLead:'{first} has no member right now. {first}’s day ends now, at {time}, and counts as signed off. {first} gets a notice on the phone.', shGo:'Send home', shDone:'{first} is signed off for today.', shUndo:'Undo', shUndone:'{first} is clocked in again.', shNotice:'Your coordinator signed you off for today at {time}. You can go home. If this is wrong, tell your coordinator.', ev_sentHome:'{provider} was sent home', ev_undoSendHome:'Send home was undone for {provider}', al_sentHome:'{who} sent {provider} home', al_undoSendHome:'{who} undid Send home for {provider}', err_UNDO_EXPIRED:'Too late to undo. Use Edit times instead.', opt_signed_off:'Signed off for today', inOut:'{start} – {end}',
   notesMissingPill:'Notes missing: {n}', notesDonePill:'Notes done',
   ev_notes_done:'{provider} finished notes for {member}', ev_notes_undone:'{provider} unticked notes for {member}', ev_signOff:'{provider} signed off',
@@ -4563,6 +4564,7 @@ function etLastVisit(providerId, date, cutoff){
     if(a.acceptedAt && a.acceptedAt <= cutoff && (best == null || a.acceptedAt > best)){ best = a.acceptedAt; who = null; }
     if(a.endedAt && a.endReason !== 'auto_signoff' && a.endedAt <= cutoff && (best == null || a.endedAt >= best)){ best = a.endedAt; who = a.memberId; }
   });
+  if(all.some(a => a.endReason === 'auto_signoff')) return null;   // T-51: a member was still open at closing: no guess
   return best == null ? null : {at: best, memberId: who};
 }
 function etSheet(sh){
@@ -6262,7 +6264,10 @@ function sheetBody(sh){
     if(!shf || shf.status !== 'auto_signed_off') return null;
     const pr = provider(shf.providerId), cut = shf.autoSignedOffAt, f = first(pr.name);
     const la = lastActivity(shf.providerId, shf.date, cut);
-    if(sh.time === undefined) sh.time = la ? hhmm(la.at) : hhmm(cut);
+    // T-51: if a member was still with them at closing, nobody knows when they left: ask, don't guess (the start of the
+    // visit was pre-filled before, which made the visit count as 0 minutes)
+    const openAtClose = (state.assignments||[]).filter(a => a.providerId === shf.providerId && a.date === shf.date && a.endReason === 'auto_signoff');
+    if(sh.time === undefined) sh.time = openAtClose.length ? '' : la ? hhmm(la.at) : hhmm(cut);
     if(sh.keep === undefined) sh.keep = !!shf.idleSignOff;
     const lr = latestRejected(shf.id);
     const endAt = sh.keep ? cut : toMs(shf.date, sh.time);
@@ -6275,6 +6280,7 @@ function sheetBody(sh){
       <button class="opt" aria-pressed="${!!sh.keep}" data-act="cfKeep" data-v="1"><span class="grow">${esc(t('cfKeep',{cut:tm(cut)}))}</span></button>
       <p class="or">${esc(t('or'))}</p>
       <button class="opt" aria-pressed="${!sh.keep}" data-act="cfKeep" data-v="0"><span class="grow">${esc(t('cfSet'))}</span></button>
+      ${sh.keep || !openAtClose.length ? '' : `<p class="note">${esc(t('cfOpenAtClose',{first:f, members:openAtClose.map(a => member(a.memberId).name).join(', '), cut:tm(cut)}))}</p>`}
       ${sh.keep ? '' : `<div class="field"><label for="cf-time">${esc(t('cfTimeLabel',{first:f}))}</label><input id="cf-time" type="time" data-bind="sheet.time" value="${esc(sh.time||'')}" min="${hhmm(shf.clockInAt)}" max="${hhmm(cut)}"><span class="muted" style="font-size:15px">${esc(t('fTimeHelp',{in:tm(shf.clockInAt), cut:tm(cut)}))}</span></div>`}
       ${warnBox(timeWarnings(shf.providerId, shf.date, endAt))}
       <div class="field"><label for="cf-comment">${esc(t('rvCommentSee',{first:f}))}</label><textarea id="cf-comment" data-bind="sheet.comment" class="${sh.badComment?'invalid':''}">${esc(sh.comment||'')}</textarea><span class="muted" style="font-size:15px">${esc(t('rvCommentNeed'))}</span></div>
